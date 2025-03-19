@@ -1,5 +1,5 @@
 use korea_investment_rs;
-
-pub fn main() {
+#[tokio::main]
+async fn main() {
     println!("{}", 1);
 }
