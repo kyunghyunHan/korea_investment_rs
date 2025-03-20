@@ -1,8 +1,10 @@
+#[cfg(feature = "ex")]
 use dotenv::dotenv;
 use korea_investment_rs::oauth::{Oauth, OauthType};
 use std::env;
 #[tokio::main]
 async fn main() {
+    #[cfg(feature = "ex")]
     dotenv().ok();
 
     let app_key = env::var("PUB_KEY").expect("APP_KEY not set in .env file");

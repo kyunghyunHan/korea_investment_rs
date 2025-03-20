@@ -129,7 +129,8 @@ pub async fn get_stock_price(
 ) -> Result<serde_json::Value, Box<dyn Error>> {
     let client = reqwest::Client::new();
 
-    let url = "https://openapi.koreainvestment.com:9443";
+    let url =
+        "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-price";
 
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
@@ -138,6 +139,12 @@ pub async fn get_stock_price(
         HeaderValue::from_str(&format!("Bearer {}", oauth.token)).unwrap(),
     );
     headers.insert("appkey", HeaderValue::from_str(&oauth.app_key).unwrap());
+    if let Some(personalseckey) = header.personalseckey {
+        headers.insert(
+            "personalseckey",
+            HeaderValue::from_str(personalseckey).unwrap(),
+        );
+    }
     headers.insert(
         "appsecret",
         HeaderValue::from_str(&oauth.app_secret).unwrap(),
@@ -156,6 +163,6 @@ pub async fn get_stock_price(
         .unwrap();
 
     let response_json: serde_json::Value = response.json().await.unwrap();
-    // println!("{}", response_json);
+    println!("{}", response_json);
     Ok(response_json)
 }
