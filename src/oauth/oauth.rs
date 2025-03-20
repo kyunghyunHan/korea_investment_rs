@@ -8,20 +8,27 @@ struct TokenResponse {
     token_type: String,
     expires_in: i32,
 }
+#[derive(Debug)]
 pub struct Oauth {
-    app_key: String,
-    app_secret: String,
+    pub app_key: String,
+    pub app_secret: String,
 }
 impl Oauth {
-    async fn get_access_token(app_key: &str, app_secret: &str) -> Result<String, Box<dyn Error>> {
+    pub fn new(app_key: String, app_secret: String) -> Self {
+        Self {
+            app_key,
+            app_secret,
+        }
+    }
+    pub async fn get_access_token(&self) -> Result<String, Box<dyn Error>> {
         let client = reqwest::Client::new();
 
         let url = "https://openapi.koreainvestment.com:9443/oauth2/tokenP";
 
         let body = json!({
             "grant_type": "client_credentials",
-            "appkey": app_key,
-            "appsecret": app_secret
+            "appkey": self.app_key,
+            "appsecret": self.app_secret
         });
 
         let mut headers = HeaderMap::new();
@@ -30,7 +37,6 @@ impl Oauth {
         let response = client.post(url).headers(headers).json(&body).send().await?;
 
         let token_response: TokenResponse = response.json().await?;
-        println!("{:?}", token_response);
         Ok(token_response.access_token)
     }
 }
