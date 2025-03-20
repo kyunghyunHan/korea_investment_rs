@@ -436,3 +436,188 @@ pub async fn get_inquire_price(
     // 성공 시 output1 데이터 반환
     Ok(response_data.output)
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ITIResponse {
+    pub rt_cd: String,
+    pub msg_cd: String,
+    pub msg1: String,
+    pub output1: ITIOutput1,
+    pub output2: Vec<ITIOutput2>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ITIOutput1 {
+    pub acml_tr_pbmn: String,
+    pub acml_vol: String,
+    pub askp: String,
+    pub bidp: String,
+    pub cpfn: String,
+    pub eps: String,
+    pub hts_avls: String,
+
+    // 필드가 누락될 수 있으므로 Option으로 처리
+    #[serde(default)]
+    pub hts_kor_isnm: Option<String>,
+
+    // 공백이 있는 필드 이름 처리
+    #[serde(rename = "itewhol_loan_rmnd_ratem name")]
+    pub itewhol_loan_rmnd_ratem_name: String,
+
+    pub lstn_stcn: String,
+    pub pbr: String,
+    pub per: String,
+    pub prdy_ctrt: String,
+    pub prdy_vol: String,
+    pub prdy_vrss: String,
+    pub prdy_vrss_sign: Option<String>, // 필요시 Option으로 처리
+    pub prdy_vrss_vol: String,
+    pub stck_fcam: String,
+    pub stck_hgpr: String,
+    pub stck_llam: String,
+    pub stck_lwpr: String,
+    pub stck_mxpr: String,
+    pub stck_oprc: String,
+    pub stck_prdy_clpr: String,
+    pub stck_prdy_hgpr: String,
+    pub stck_prdy_lwpr: String,
+    pub stck_prdy_oprc: String,
+    pub stck_prpr: String,
+
+    // 응답에 없는 필드는 Option으로 처리
+    #[serde(default)]
+    pub stck_shrn_iscd: Option<String>,
+
+    pub vol_tnrt: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ITIOutput2 {
+    pub acml_tr_pbmn: String,
+    pub acml_vol: String,
+
+    pub flng_cls_code: String,
+
+    pub mod_yn: String,
+
+    pub prdy_vrss: String,
+
+    pub prdy_vrss_sign: String,
+
+    pub prtt_rate: String,
+
+    pub revl_issu_reas: String,
+
+    pub stck_bsop_date: String,
+
+    pub stck_clpr: String,
+
+    pub stck_hgpr: String,
+
+    pub stck_lwpr: String,
+
+    pub stck_oprc: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IDIQuery<'a> {
+    /// 조건 시장 분류 코드
+    /// - J: KRX
+    /// - NX: NXT
+    /// - UN: 통합
+    #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
+    pub fid_cond_mark_div_code: &'a str,
+
+    /// 입력 종목코드 (예: 005930 삼성전자)
+    #[serde(rename = "FID_INPUT_ISCD")]
+    pub fid_input_iscd: &'a str,
+
+    #[serde(rename = "FID_INPUT_DATE_1")]
+    pub fid_input_date_1: &'a str,
+    #[serde(rename = "FID_INPUT_DATE_2")]
+    pub fid_input_date_2: &'a str,
+    #[serde(rename = "FID_PERIOD_DIV_CODE")]
+    pub fid_period_div_code: &'a str,
+    #[serde(rename = "FID_ORG_ADJ_PRC")]
+    pub fid_org_adj_prc: &'a str,
+}
+impl<'a> IDIQuery<'a> {
+    pub fn new(
+        fid_cond_mark_div_code: &'a str,
+        fid_input_iscd: &'a str,
+        fid_input_date_1: &'a str,
+        fid_input_date_2: &'a str,
+        fid_period_div_code: &'a str,
+        fid_org_adj_prc: &'a str,
+    ) -> Self {
+        Self {
+            fid_cond_mark_div_code,
+            fid_input_iscd,
+            fid_input_date_1,
+            fid_input_date_2,
+            fid_period_div_code,
+            fid_org_adj_prc,
+        }
+    }
+}
+
+pub async fn get_inquire_daily_itemchartprice(
+    oauth: Oauth,
+    header: ApiHeader<'_>,
+    query: IDIQuery<'_>,
+) -> Result<ITIResponse, Box<dyn Error>> {
+    let client = reqwest::Client::new();
+
+    // let url = format!(
+    //     "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
+    // );
+    let url = "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice";
+
+    let mut headers = HeaderMap::new();
+    headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+    headers.insert(
+        "authorization",
+        HeaderValue::from_str(&format!("Bearer {}", oauth.token))?,
+    );
+    headers.insert("appkey", HeaderValue::from_str(&oauth.app_key)?);
+    if let Some(personalseckey) = header.personalseckey {
+        headers.insert("personalseckey", HeaderValue::from_str(personalseckey)?);
+    }
+    headers.insert("appsecret", HeaderValue::from_str(&oauth.app_secret)?);
+    headers.insert("tr_id", HeaderValue::from_static("FHKST03010100")); // 주식 현재가 시세 조회
+
+    let response = client
+        .get(url)
+        .headers(headers)
+        .query(&[
+            ("FID_COND_MRKT_DIV_CODE", &query.fid_cond_mark_div_code), // 주식 시장 구분 코드 (J:주식)
+            ("FID_INPUT_ISCD", &query.fid_input_iscd),                 // 종목코드
+            ("FID_INPUT_DATE_1", &query.fid_input_date_1),
+            ("FID_INPUT_DATE_2", &query.fid_input_date_2),
+            ("FID_PERIOD_DIV_CODE", &query.fid_period_div_code),
+            ("FID_ORG_ADJ_PRC", &query.fid_org_adj_prc),
+        ])
+        .send()
+        .await?;
+
+    // 응답 상태 확인
+    let status = response.status();
+    if !status.is_success() {
+        let error_text = response.text().await?;
+        return Err(format!("API 요청 실패 ({}): {}", status, error_text).into());
+    }
+
+    // 응답을 StockPriceResponse 구조체로 파싱
+    // let response_data: ITIResponse = response.json().await?;
+    let response_data: ITIResponse = response.json().await?;
+
+    // 응답 코드 확인
+    if response_data.rt_cd != "0" {
+        return Err(format!(
+            "API 응답 오류: {} (코드: {})",
+            response_data.msg1, response_data.msg_cd
+        )
+        .into());
+    }
+    // 성공 시 output1 데이터 반환
+    Ok(response_data)
+}
