@@ -16,14 +16,8 @@ async fn main() {
     let app_secret = env::var("SCREST_KEY").expect("APP_SECRET not set in .env file");
     let r#type = OauthType::PRACTICE;
     let token = Oauth::new(app_key, app_secret, r#type).await.unwrap();
-    println!("{}", token.token);
-    let query = IDIQuery::new("J", "20220411", "20220509", "000660", "0", "D");
-
-    println!("{:?}:", query);
-
+    let query = IDIQuery::new("J", "005930", "20220101", "20220531", "D", "0");
     let header = ApiHeader::new(Custtype::P, None, None, None, None, None).unwrap();
-    println!("{:?}:", header);
-
     let result = get_inquire_daily_itemchartprice(token, header, query)
         .await
         .unwrap();

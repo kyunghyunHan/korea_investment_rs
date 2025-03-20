@@ -566,10 +566,6 @@ pub async fn get_inquire_daily_itemchartprice(
     query: IDIQuery<'_>,
 ) -> Result<ITIResponse, Box<dyn Error>> {
     let client = reqwest::Client::new();
-
-    // let url = format!(
-    //     "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
-    // );
     let url = "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice";
 
     let mut headers = HeaderMap::new();
@@ -579,10 +575,10 @@ pub async fn get_inquire_daily_itemchartprice(
         HeaderValue::from_str(&format!("Bearer {}", oauth.token))?,
     );
     headers.insert("appkey", HeaderValue::from_str(&oauth.app_key)?);
+    headers.insert("appsecret", HeaderValue::from_str(&oauth.app_secret)?);
     if let Some(personalseckey) = header.personalseckey {
         headers.insert("personalseckey", HeaderValue::from_str(personalseckey)?);
     }
-    headers.insert("appsecret", HeaderValue::from_str(&oauth.app_secret)?);
     headers.insert("tr_id", HeaderValue::from_static("FHKST03010100")); // 주식 현재가 시세 조회
 
     let response = client
