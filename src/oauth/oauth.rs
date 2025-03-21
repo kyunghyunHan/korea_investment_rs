@@ -13,6 +13,7 @@ pub enum OauthType {
     PRACTICE,
     IMITATION,
 }
+
 #[derive(Debug)]
 pub struct Oauth {
     pub app_key: String,
@@ -21,6 +22,17 @@ pub struct Oauth {
     pub r#type: OauthType,
 }
 impl Oauth {
+    /// create Oauth
+    ///
+    /// # Examples
+    /// ```
+    ///     dotenv().ok();
+    ///     let app_key = env::var("PUB_KEY").expect("APP_KEY not set in .env file");
+    ///     let app_secret = env::var("SCREST_KEY").expect("APP_SECRET not set in .env file");
+    ///     let r#type = OauthType::PRACTICE;
+    ///     let token = Oauth::new(app_key, app_secret, r#type).await.unwrap();
+    ///     println!("{:?}", token);
+    /// ```
     pub async fn new(
         app_key: String,
         app_secret: String,
@@ -51,34 +63,3 @@ impl Oauth {
         })
     }
 }
-// async fn get_samsung_stock_price(app_key: &str, app_secret: &str, access_token: &str) {
-//     let client = reqwest::Client::new();
-
-//     let url =
-//         "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-price";
-
-//     let mut headers = HeaderMap::new();
-//     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-//     headers.insert(
-//         "authorization",
-//         HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap(),
-//     );
-//     headers.insert("appkey", HeaderValue::from_str(app_key).unwrap());
-//     headers.insert("appsecret", HeaderValue::from_str(app_secret).unwrap());
-//     headers.insert("tr_id", HeaderValue::from_static("FHKST01010100")); // 주식 현재가 시세 조회
-
-//     let response = client
-//         .get(url)
-//         .headers(headers)
-//         .query(&[
-//             ("FID_COND_MRKT_DIV_CODE", "J"), // 주식 시장 구분 코드 (J:주식)
-//             ("FID_INPUT_ISCD", "005930"),    // 삼성전자 종목코드
-//         ])
-//         .send()
-//         .await
-//         .unwrap();
-
-//     let response_json: serde_json::Value = response.json().await.unwrap();
-//     println!("{}", response_json);
-//     // Ok(stock_data)
-// }

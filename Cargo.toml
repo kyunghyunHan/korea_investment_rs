@@ -2,7 +2,7 @@
 name = "korea_investment_rs"
 version = "0.1.1"
 edition = "2024"
-description = "A fun game where you guess what number the computer has chosen."
+description = "Korea Investment & Securities Open API"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
