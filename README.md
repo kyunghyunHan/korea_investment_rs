@@ -11,3 +11,6 @@
 ```
 cargo run --example get_inquire_daily_itemchartprice  --features ex
 ```
+
+## create approval_key
+- cargo run --example get_inquire_daily_itemchartprice  --features ex

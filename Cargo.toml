@@ -19,3 +19,7 @@ optional = true
 
 [features]
 ex = ["dotenv"]
+
+[[example]]
+name = "creat_approval_key"
+path = "./examples/socket/creat_approval_key.rs"
