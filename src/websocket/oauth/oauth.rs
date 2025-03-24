@@ -21,9 +21,9 @@ impl ApproveOauth {
     ///     dotenv().ok();
     ///     let app_key = env::var("PUB_KEY").expect("APP_KEY not set in .env file");
     ///     let app_secret = env::var("SCREST_KEY").expect("APP_SECRET not set in .env file");
-    ///     let r#type = OauthType::PRACTICE;
-    ///     let token = Oauth::new(app_key, app_secret, r#type).await.unwrap();
-    ///     println!("{:?}", token);
+    ///     
+    ///     let approval_key = ApproveOauth::new(app_key, app_secret).await.unwrap();
+    ///     println!("{:?}", tokeapproval_key);
     /// ```
     pub async fn new(app_key: String, app_secret: String) -> Result<Self, Box<dyn Error>> {
         let client = reqwest::Client::new();
@@ -33,7 +33,7 @@ impl ApproveOauth {
         let body = json!({
             "grant_type": "client_credentials",
             "appkey": app_key,
-            "appsecret": app_secret
+            "secretkey": app_secret
         });
 
         let mut headers = HeaderMap::new();
@@ -42,7 +42,6 @@ impl ApproveOauth {
         let response = client.post(url).headers(headers).json(&body).send().await?;
 
         let approval_response: TokenResponse = response.json().await?;
-
         Ok(Self {
             app_key,
             app_secret,
