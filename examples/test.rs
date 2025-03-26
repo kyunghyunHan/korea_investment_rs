@@ -1,7 +1,5 @@
 use korea_investment_rs::types::CustType;
-use korea_investment_rs::websocket::overseas::{
-    OverseasRealtimeClient, OverseasRealtimeData, OverseasRealtimeInfoType,
-};
+use korea_investment_rs::websocket::overseas::OverseasRealtimeClient;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 클라이언트 생성
