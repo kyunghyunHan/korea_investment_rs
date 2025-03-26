@@ -1,4 +1,5 @@
 // use crate::websocket::oauth::ApproveOauth;
+use crate::types::CustType;
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
 use futures_util::{SinkExt, stream::StreamExt};
@@ -143,11 +144,16 @@ pub struct OverseasRealtimeClient {
     app_key: String,
     app_secret: String,
     approval_key: String,
+    cust_type: CustType,
 }
 
 impl OverseasRealtimeClient {
     /// 새로운 클라이언트 생성
-    pub async fn new(app_key: String, app_secret: String) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(
+        app_key: String,
+        app_secret: String,
+        cust_type: CustType,
+    ) -> Result<Self, Box<dyn Error>> {
         let client = reqwest::Client::new();
 
         let url = "https://openapi.koreainvestment.com:9443/oauth2/Approval";
@@ -168,11 +174,12 @@ impl OverseasRealtimeClient {
             app_key,
             app_secret,
             approval_key: (approval_response.approval_key),
+            cust_type,
         })
     }
 
     /// 환경 변수에서 클라이언트 생성
-    pub async fn from_env() -> Result<Self, OverseasRealtimeError> {
+    pub async fn from_env(cust_type: CustType) -> Result<Self, OverseasRealtimeError> {
         #[cfg(feature = "ex")]
         dotenv().ok();
 
@@ -202,6 +209,7 @@ impl OverseasRealtimeClient {
             app_key,
             app_secret,
             approval_key: (approval_response.approval_key),
+            cust_type,
         })
     }
 
@@ -328,5 +336,3 @@ impl StreamController {
             .map_err(|e| OverseasRealtimeError::MessageError(e.to_string()))
     }
 }
-
-
