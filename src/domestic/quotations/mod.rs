@@ -1,13 +1,9 @@
 use crate::oauth::Oauth;
+use crate::types::CustType;
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 use serde::{self, Deserialize, Serialize};
 use std::error::Error;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum Custtype {
-    B, //법인
-    P, //개인
-}
 /*Header
 주식 현재가
 GET
@@ -33,7 +29,7 @@ pub struct ApiHeader<'a> {
     /// 고객 타입
     /// - B: 법인
     /// - P: 개인
-    pub custtype: Custtype,
+    pub custtype: CustType,
 
     /// [법인 필수] 일련번호 (001)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -62,7 +58,7 @@ pub struct ApiHeader<'a> {
 }
 impl<'a> ApiHeader<'a> {
     pub fn new(
-        custtype: Custtype,
+        custtype: CustType,
         personalseckey: Option<&'a str>,
         seq_no: Option<&'a str>,
         phone_number: Option<&'a str>,
@@ -70,7 +66,7 @@ impl<'a> ApiHeader<'a> {
         gt_uid: Option<&'a str>,
     ) -> Result<Self, &'static str> {
         // 법인인 경우 필수 필드 검증
-        if custtype == Custtype::B {
+        if custtype == CustType::B {
             if personalseckey.is_none() {
                 return Err("법인 사용자는 personalseckey가 필요합니다");
             }
