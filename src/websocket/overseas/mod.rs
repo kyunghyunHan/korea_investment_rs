@@ -362,6 +362,177 @@ pub struct OverseasOrderbookData {
     /// 매도잔량대비10
     pub dask10: String,
 }
+// OverseasOrderbookData에 대한 RealtimeData 구현
+impl RealtimeData for OverseasOrderbookData {
+    fn from_delimited_string(text: &str) -> Option<Self> {
+        let fields: Vec<&str> = text.split('^').collect();
+
+        if fields.len() < 71 {
+            // 호가 정보는 필드가 많습니다
+            return None;
+        }
+
+        Some(Self {
+            rsym: fields[0].to_string(),
+            symb: fields[1].to_string(),
+            zdiv: fields[2].to_string(),
+            xymd: fields[3].to_string(),
+            xhms: fields[4].to_string(),
+            kymd: fields[5].to_string(),
+            khms: fields[6].to_string(),
+            bvol: fields[7].to_string(),
+            avol: fields[8].to_string(),
+            bdvl: fields[9].to_string(),
+            advl: fields[10].to_string(),
+
+            // 1단계 호가
+            pbid1: fields[11].to_string(),
+            pask1: fields[12].to_string(),
+            vbid1: fields[13].to_string(),
+            vask1: fields[14].to_string(),
+            dbid1: fields[15].to_string(),
+            dask1: fields[16].to_string(),
+
+            // 2단계 호가
+            pbid2: fields[17].to_string(),
+            pask2: fields[18].to_string(),
+            vbid2: fields[19].to_string(),
+            vask2: fields[20].to_string(),
+            dbid2: fields[21].to_string(),
+            dask2: fields[22].to_string(),
+
+            // 3단계 호가
+            pbid3: fields[23].to_string(),
+            pask3: fields[24].to_string(),
+            vbid3: fields[25].to_string(),
+            vask3: fields[26].to_string(),
+            dbid3: fields[27].to_string(),
+            dask3: fields[28].to_string(),
+
+            // 4단계 호가
+            pbid4: fields[29].to_string(),
+            pask4: fields[30].to_string(),
+            vbid4: fields[31].to_string(),
+            vask4: fields[32].to_string(),
+            dbid4: fields[33].to_string(),
+            dask4: fields[34].to_string(),
+
+            // 5단계 호가
+            pbid5: fields[35].to_string(),
+            pask5: fields[36].to_string(),
+            vbid5: fields[37].to_string(),
+            vask5: fields[38].to_string(),
+            dbid5: fields[39].to_string(),
+            dask5: fields[40].to_string(),
+
+            // 6단계 호가
+            pbid6: fields[41].to_string(),
+            pask6: fields[42].to_string(),
+            vbid6: fields[43].to_string(),
+            vask6: fields[44].to_string(),
+            dbid6: fields[45].to_string(),
+            dask6: fields[46].to_string(),
+
+            // 7단계 호가
+            pbid7: fields[47].to_string(),
+            pask7: fields[48].to_string(),
+            vbid7: fields[49].to_string(),
+            vask7: fields[50].to_string(),
+            dbid7: fields[51].to_string(),
+            dask7: fields[52].to_string(),
+
+            // 8단계 호가
+            pbid8: fields[53].to_string(),
+            pask8: fields[54].to_string(),
+            vbid8: fields[55].to_string(),
+            vask8: fields[56].to_string(),
+            dbid8: fields[57].to_string(),
+            dask8: fields[58].to_string(),
+
+            // 9단계 호가
+            pbid9: fields[59].to_string(),
+            pask9: fields[60].to_string(),
+            vbid9: fields[61].to_string(),
+            vask9: fields[62].to_string(),
+            dbid9: fields[63].to_string(),
+            dask9: fields[64].to_string(),
+
+            // 10단계 호가
+            pbid10: fields[65].to_string(),
+            pask10: fields[66].to_string(),
+            vbid10: fields[67].to_string(),
+            vask10: fields[68].to_string(),
+            dbid10: fields[69].to_string(),
+            dask10: fields[70].to_string(),
+        })
+    }
+}
+
+// OverseasOrderNotificationData에 대한 RealtimeData 구현
+impl RealtimeData for OverseasOrderNotificationData {
+    fn from_delimited_string(text: &str) -> Option<Self> {
+        let fields: Vec<&str> = text.split('^').collect();
+
+        if fields.len() < 22 {
+            return None;
+        }
+
+        Some(Self {
+            cust_id: fields[0].to_string(),
+            acnt_no: fields[1].to_string(),
+            oder_no: fields[2].to_string(),
+            ooder_no: fields[3].to_string(),
+            seln_byov_cls: fields[4].to_string(),
+            rctf_cls: fields[5].to_string(),
+            oder_kind2: fields[6].to_string(),
+            stck_shrn_iscd: fields[7].to_string(),
+            cntg_qty: fields[8].to_string(),
+            cntg_unpr: fields[9].to_string(),
+            stck_cntg_hour: fields[10].to_string(),
+            rfus_yn: fields[11].to_string(),
+            cntg_yn: fields[12].to_string(),
+            acpt_yn: fields[13].to_string(),
+            brnc_no: fields[14].to_string(),
+            oder_qty: fields[15].to_string(),
+            acnt_name: fields[16].to_string(),
+            cntg_isnm: fields[17].to_string(),
+            oder_cond: fields[18].to_string(),
+            debt_gb: fields[19].to_string(),
+            debt_date: fields[20].to_string(),
+        })
+    }
+}
+
+// OverseasQuoteData에 대한 RealtimeData 구현도 필요합니다
+impl RealtimeData for OverseasQuoteData {
+    fn from_delimited_string(text: &str) -> Option<Self> {
+        let fields: Vec<&str> = text.split('^').collect();
+
+        if fields.len() < 17 {
+            return None;
+        }
+
+        Some(Self {
+            rsym: fields[0].to_string(),
+            symb: fields[1].to_string(),
+            zdiv: fields[2].to_string(),
+            xymd: fields[3].to_string(),
+            xhms: fields[4].to_string(),
+            kymd: fields[5].to_string(),
+            khms: fields[6].to_string(),
+            bvol: fields[7].to_string(),
+            avol: fields[8].to_string(),
+            bdvl: fields[9].to_string(),
+            advl: fields[10].to_string(),
+            pbid1: fields[11].to_string(),
+            pask1: fields[12].to_string(),
+            vbid1: fields[13].to_string(),
+            vask1: fields[14].to_string(),
+            dbid1: fields[15].to_string(),
+            dask1: fields[16].to_string(),
+        })
+    }
+}
 impl RealtimeData for OverseasRealtimeData {
     fn from_delimited_string(text: &str) -> Option<Self> {
         let fields: Vec<&str> = text.split('^').collect();
@@ -400,45 +571,6 @@ impl RealtimeData for OverseasRealtimeData {
         })
     }
 }
-// impl OverseasRealtimeData {
-//     /// 구분자(^)로 나뉜 문자열에서 구조체 생성
-//     pub fn from_delimited_string(text: &str) -> Option<Self> {
-//         let fields: Vec<&str> = text.split('^').collect();
-
-//         if fields.len() < 26 {
-//             return None;
-//         }
-
-//         Some(Self {
-//             rsym: fields[0].to_string(),
-//             symb: fields[1].to_string(),
-//             zdiv: fields[2].to_string(),
-//             tymd: fields[3].to_string(),
-//             xymd: fields[4].to_string(),
-//             xhms: fields[5].to_string(),
-//             kymd: fields[6].to_string(),
-//             khms: fields[7].to_string(),
-//             open: fields[8].to_string(),
-//             high: fields[9].to_string(),
-//             low: fields[10].to_string(),
-//             last: fields[11].to_string(),
-//             sign: fields[12].to_string(),
-//             diff: fields[13].to_string(),
-//             rate: fields[14].to_string(),
-//             pbid: fields[15].to_string(),
-//             pask: fields[16].to_string(),
-//             vbid: fields[17].to_string(),
-//             vask: fields[18].to_string(),
-//             evol: fields[19].to_string(),
-//             tvol: fields[20].to_string(),
-//             tamt: fields[21].to_string(),
-//             bivl: fields[22].to_string(),
-//             asvl: fields[23].to_string(),
-//             strn: fields[24].to_string(),
-//             mtyp: fields[25].to_string(),
-//         })
-//     }
-// }
 
 /// 해외 실시간 데이터 관련 오류
 #[derive(Debug)]
@@ -541,16 +673,17 @@ impl OverseasRealtimeClient {
     }
 
     /// 해외 실시간 데이터 스트림 시작
-    pub async fn start_stream<T: RealtimeData + Send + 'static>(
+    async fn start_stream<T: RealtimeData + Send + 'static>(
         &self,
         symbol: &str,
-        // r#type: OverseasRealtimeInfoType,
+        r#type: OverseasRealtimeInfoType,
         mut callback: impl FnMut(T) + Send + 'static,
     ) -> Result<StreamController, OverseasRealtimeError> {
         let oauth = self;
 
-        // WebSocket URL
-        let url = "ws://ops.koreainvestment.com:21000/tryitout/HDFSCNT0";
+        // WebSocket URL - 타입에 따른 TR 코드 사용
+        let tr_code = r#type.get_tr_code();
+        let url = format!("ws://ops.koreainvestment.com:21000/tryitout/{}", tr_code);
 
         // WebSocket 연결
         let (ws_stream, _) = connect_async(url)
@@ -572,8 +705,8 @@ impl OverseasRealtimeClient {
             },
             "body": {
                 "input": {
-                    "tr_id": "HDFSCNT0",
-                    "tr_key": symbol  // 예: "DNASAAPL" - 나스닥 애플 종목
+                    "tr_id": tr_code,
+                    "tr_key": symbol
                 }
             }
         });
@@ -605,47 +738,130 @@ impl OverseasRealtimeClient {
                 if !is_running {
                     break;
                 }
-                println!("{:?}",message);
+
                 match message {
                     Ok(Message::Text(text)) => {
+                        // JSON 형식인지 확인
                         if text.starts_with('{') {
-                            // JSON 응답 로깅 또는 처리
                             println!("수신된 JSON: {}", text);
-                            // 여기서 JSON 파싱 및 처리 로직 추가
+                            // 여기서 구독 확인 또는 오류 처리 가능
                         } else {
                             // 구분자(^)로 나뉜 실시간 데이터 파싱
                             if let Some(data) = T::from_delimited_string(&text) {
                                 callback(data);
+                            } else {
+                                println!("데이터 파싱 실패: {}", text);
                             }
                         }
                     }
-                    Ok(_) => {}
-                    Err(_) => {
+                    Ok(other) => {
+                        println!("WebSocket에서 텍스트가 아닌 메시지 수신: {:?}", other);
+                    }
+                    Err(e) => {
+                        println!("WebSocket 에러: {:?}", e);
                         break;
                     }
                 }
             }
+            println!("WebSocket 연결 종료");
         });
 
         Ok(StreamController { tx })
     }
-
-    /// 해외 실시간 데이터 스트림 시작 (채널 반환)
-    pub async fn start_stream_channel(
+    /// 해외 실시간 데이터 스트림 시작 (채널 반환) - 제네릭 버전
+    pub async fn start_stream_channel<T: RealtimeData + Send + 'static>(
         &self,
         symbol: &str,
-        // r#type: OverseasRealtimeInfoType,
-    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
-    {
-        let (data_tx, data_rx) = mpsc::channel::<OverseasRealtimeData>(100);
+        r#type: OverseasRealtimeInfoType,
+    ) -> Result<(mpsc::Receiver<T>, StreamController), OverseasRealtimeError> {
+        let (data_tx, data_rx) = mpsc::channel::<T>(100);
 
         let controller = self
-            .start_stream(symbol, move |data| {
+            .start_stream(symbol, r#type, move |data: T| {
                 let _ = data_tx.try_send(data);
             })
             .await?;
 
         Ok((data_rx, controller))
+    }
+
+    // 편의 메서드들 - 타입별로 특화된 스트림 시작 함수들
+    // 실시간 시세 데이터용
+    pub async fn start_quote_stream(
+        &self,
+        symbol: &str,
+        callback: impl FnMut(OverseasRealtimeData) + Send + 'static,
+    ) -> Result<StreamController, OverseasRealtimeError> {
+        self.start_stream(symbol, OverseasRealtimeInfoType::RealTimeQuote, callback)
+            .await
+    }
+
+    // 실시간 호가(미국) 데이터용
+    pub async fn start_orderbook_stream(
+        &self,
+        symbol: &str,
+        callback: impl FnMut(OverseasOrderbookData) + Send + 'static,
+    ) -> Result<StreamController, OverseasRealtimeError> {
+        self.start_stream(symbol, OverseasRealtimeInfoType::QuoteUSA, callback)
+            .await
+    }
+
+    // 주문/체결 통보 데이터용
+    pub async fn start_notification_stream(
+        &self,
+        symbol: &str,
+        callback: impl FnMut(OverseasOrderNotificationData) + Send + 'static,
+    ) -> Result<StreamController, OverseasRealtimeError> {
+        self.start_stream(
+            symbol,
+            OverseasRealtimeInfoType::TradeNotification,
+            callback,
+        )
+        .await
+    }
+
+    // 실시간 시세 데이터용 채널 반환 메서드
+    pub async fn start_quote_stream_channel(
+        &self,
+        symbol: &str,
+    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
+    {
+        self.start_stream_channel::<OverseasRealtimeData>(
+            symbol,
+            OverseasRealtimeInfoType::RealTimeQuote,
+        )
+        .await
+    }
+
+    // 실시간 호가(미국) 데이터용 채널 반환 메서드
+    pub async fn start_orderbook_stream_channel(
+        &self,
+        symbol: &str,
+    ) -> Result<(mpsc::Receiver<OverseasOrderbookData>, StreamController), OverseasRealtimeError>
+    {
+        self.start_stream_channel::<OverseasOrderbookData>(
+            symbol,
+            OverseasRealtimeInfoType::QuoteUSA,
+        )
+        .await
+    }
+
+    // 주문/체결 통보 데이터용 채널 반환 메서드
+    pub async fn start_notification_stream_channel(
+        &self,
+        symbol: &str,
+    ) -> Result<
+        (
+            mpsc::Receiver<OverseasOrderNotificationData>,
+            StreamController,
+        ),
+        OverseasRealtimeError,
+    > {
+        self.start_stream_channel::<OverseasOrderNotificationData>(
+            symbol,
+            OverseasRealtimeInfoType::TradeNotification,
+        )
+        .await
     }
 }
 
