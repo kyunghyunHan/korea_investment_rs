@@ -1,14 +1,19 @@
-use crate::websocket::oauth::ApproveOauth;
+// use crate::websocket::oauth::ApproveOauth;
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
 use futures_util::{SinkExt, stream::StreamExt};
+use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::env;
-use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
-use tokio::sync::mpsc;
 use std::error::Error;
 use std::fmt;
+use tokio::sync::mpsc;
+use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+#[derive(Deserialize, Debug)]
+struct TokenResponse {
+    approval_key: String,
+}
 
 /// 해외 실시간 데이터 구조체
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -128,35 +133,75 @@ impl fmt::Display for OverseasRealtimeError {
         }
     }
 }
-
+impl From<reqwest::Error> for OverseasRealtimeError {
+    fn from(error: reqwest::Error) -> Self {
+        OverseasRealtimeError::ConnectionError(error.to_string())
+    }
+}
 /// 해외 실시간 데이터 클라이언트
 pub struct OverseasRealtimeClient {
     app_key: String,
     app_secret: String,
+    approval_key: String,
 }
 
 impl OverseasRealtimeClient {
     /// 새로운 클라이언트 생성
-    pub fn new(app_key: String, app_secret: String) -> Self {
-        Self {
-            app_key,
-            app_secret,
-        }
-    }
+    pub async fn new(app_key: String, app_secret: String) -> Result<Self, Box<dyn Error>> {
+        let client = reqwest::Client::new();
 
-    /// 환경 변수에서 클라이언트 생성
-    pub fn from_env() -> Result<Self, OverseasRealtimeError> {
-        #[cfg(feature = "ex")]
-        dotenv().ok();
+        let url = "https://openapi.koreainvestment.com:9443/oauth2/Approval";
 
-        let app_key = env::var("PUB_KEY")
-            .map_err(|_| OverseasRealtimeError::EnvError("APP_KEY not set in .env file".to_string()))?;
-        let app_secret = env::var("SCREST_KEY")
-            .map_err(|_| OverseasRealtimeError::EnvError("APP_SECRET not set in .env file".to_string()))?;
+        let body = json!({
+            "grant_type": "client_credentials",
+            "appkey": app_key,
+            "secretkey": app_secret
+        });
 
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+
+        let response = client.post(url).headers(headers).json(&body).send().await?;
+
+        let approval_response: TokenResponse = response.json().await?;
         Ok(Self {
             app_key,
             app_secret,
+            approval_key: (approval_response.approval_key),
+        })
+    }
+
+    /// 환경 변수에서 클라이언트 생성
+    pub async fn from_env() -> Result<Self, OverseasRealtimeError> {
+        #[cfg(feature = "ex")]
+        dotenv().ok();
+
+        let app_key = env::var("PUB_KEY").map_err(|_| {
+            OverseasRealtimeError::EnvError("APP_KEY not set in .env file".to_string())
+        })?;
+        let app_secret = env::var("SCREST_KEY").map_err(|_| {
+            OverseasRealtimeError::EnvError("APP_SECRET not set in .env file".to_string())
+        })?;
+        let client = reqwest::Client::new();
+
+        let url = "https://openapi.koreainvestment.com:9443/oauth2/Approval";
+
+        let body = json!({
+            "grant_type": "client_credentials",
+            "appkey": app_key,
+            "secretkey": app_secret
+        });
+
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+
+        let response = client.post(url).headers(headers).json(&body).send().await?;
+
+        let approval_response: TokenResponse = response.json().await?;
+        Ok(Self {
+            app_key,
+            app_secret,
+            approval_key: (approval_response.approval_key),
         })
     }
 
@@ -166,9 +211,7 @@ impl OverseasRealtimeClient {
         symbol: &str,
         mut callback: impl FnMut(OverseasRealtimeData) + Send + 'static,
     ) -> Result<StreamController, OverseasRealtimeError> {
-        let oauth = ApproveOauth::new(self.app_key.clone(), self.app_secret.clone())
-            .await
-            .map_err(|e| OverseasRealtimeError::AuthError(e.to_string()))?;
+        let oauth = self;
 
         // WebSocket URL
         let url = "ws://ops.koreainvestment.com:21000/tryitout/HDFSCNT0";
@@ -177,11 +220,11 @@ impl OverseasRealtimeClient {
         let (ws_stream, _) = connect_async(url)
             .await
             .map_err(|e| OverseasRealtimeError::ConnectionError(e.to_string()))?;
-        
+
         let (mut write, mut read) = ws_stream.split();
 
         // 접속 키 (API 승인 요청 후 받은 approval_key 사용)
-        let approval_key = oauth.approval_key;
+        let approval_key = &oauth.approval_key;
 
         // WebSocket 요청 데이터
         let request_data = json!({
@@ -252,12 +295,15 @@ impl OverseasRealtimeClient {
     pub async fn start_stream_channel(
         &self,
         symbol: &str,
-    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError> {
+    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
+    {
         let (data_tx, data_rx) = mpsc::channel::<OverseasRealtimeData>(100);
-        
-        let controller = self.start_stream(symbol, move |data| {
-            let _ = data_tx.try_send(data);
-        }).await?;
+
+        let controller = self
+            .start_stream(symbol, move |data| {
+                let _ = data_tx.try_send(data);
+            })
+            .await?;
 
         Ok((data_rx, controller))
     }
@@ -300,26 +346,28 @@ mod tests {
 // 예제 사용 방법
 pub async fn example_usage() -> Result<(), Box<dyn Error>> {
     // 클라이언트 생성
-    let client = OverseasRealtimeClient::from_env()?;
-    
+    let client = OverseasRealtimeClient::from_env().await?;
+
     // 콜백 함수로 데이터 처리
-    let controller = client.start_stream("DNASAAPL", |data| {
-        println!("실시간 데이터: {:?}", data);
-    }).await?;
-    
+    let controller = client
+        .start_stream("DNASAAPL", |data| {
+            println!("실시간 데이터: {:?}", data);
+        })
+        .await?;
+
     // 또는 채널로 데이터 처리
     let (mut data_rx, controller2) = client.start_stream_channel("DNASNASD").await?;
-    
+
     tokio::spawn(async move {
         while let Some(data) = data_rx.recv().await {
             println!("채널 데이터: {:?}", data);
         }
     });
-    
+
     // 10초 후 스트림 중지
     tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
     controller.stop().await?;
     controller2.stop().await?;
-    
+
     Ok(())
 }
