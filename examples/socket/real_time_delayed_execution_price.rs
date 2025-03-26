@@ -45,3 +45,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+// 예제 사용 방법
+pub async fn example_usage() -> Result<(), Box<dyn Error>> {
+    // 클라이언트 생성
+    let client = OverseasRealtimeClient::from_env().await?;
+
+    // 콜백 함수로 데이터 처리
+    let controller = client
+        .start_stream("DNASAAPL", |data| {
+            println!("실시간 데이터: {:?}", data);
+        })
+        .await?;
+
+    // 또는 채널로 데이터 처리
+    let (mut data_rx, controller2) = client.start_stream_channel("DNASNASD").await?;
+
+    tokio::spawn(async move {
+        while let Some(data) = data_rx.recv().await {
+            println!("채널 데이터: {:?}", data);
+        }
+    });
+
+    // 10초 후 스트림 중지
+    tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+    controller.stop().await?;
+    controller2.stop().await?;
+
+    Ok(())
+}

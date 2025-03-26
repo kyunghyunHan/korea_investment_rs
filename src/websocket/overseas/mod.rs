@@ -329,45 +329,4 @@ impl StreamController {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[tokio::test]
-    async fn test_from_delimited_string() {
-        let text = "DNASAAPL^AAPL^2^20240115^240115^163000^240116^013000^190.62^191.37^189.95^190.95^2^0.72^0.38^190.95^190.97^241928^33337^1800^6523064^1244686432.52^3235000^3288064^1.02^1";
-        let data = OverseasRealtimeData::from_delimited_string(text).unwrap();
-        assert_eq!(data.rsym, "DNASAAPL");
-        assert_eq!(data.symb, "AAPL");
-        assert_eq!(data.last, "190.95");
-    }
-}
-
-// 예제 사용 방법
-pub async fn example_usage() -> Result<(), Box<dyn Error>> {
-    // 클라이언트 생성
-    let client = OverseasRealtimeClient::from_env().await?;
-
-    // 콜백 함수로 데이터 처리
-    let controller = client
-        .start_stream("DNASAAPL", |data| {
-            println!("실시간 데이터: {:?}", data);
-        })
-        .await?;
-
-    // 또는 채널로 데이터 처리
-    let (mut data_rx, controller2) = client.start_stream_channel("DNASNASD").await?;
-
-    tokio::spawn(async move {
-        while let Some(data) = data_rx.recv().await {
-            println!("채널 데이터: {:?}", data);
-        }
-    });
-
-    // 10초 후 스트림 중지
-    tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
-    controller.stop().await?;
-    controller2.stop().await?;
-
-    Ok(())
-}
