@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverseasOrderNotificationData {
     /// 고객 ID
@@ -46,7 +45,6 @@ pub struct OverseasOrderNotificationData {
     /// 담보대출일자 (YYYYMMDD)
     pub debt_date: String,
 }
-
 
 pub trait RealtimeData: Sized {
     /// 구분자(^)로 나뉜 문자열에서 구조체 생성

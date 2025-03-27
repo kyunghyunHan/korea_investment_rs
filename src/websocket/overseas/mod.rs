@@ -9,7 +9,7 @@ use models::{
     RealtimeData,
 };
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::json;
 use std::env;
 use std::error::Error;
@@ -235,28 +235,33 @@ impl OverseasRealtimeClient {
     }
 
     // 편의 메서드들 - 타입별로 특화된 스트림 시작 함수들
+    //1) Overseas Stock Real-Time Delayed Transaction Price [Real-Time-007]
     // 실시간 시세 데이터용
-    pub async fn start_quote_stream(
+    pub async fn start_delayed_transaction_price(
         &self,
         symbol: &str,
         callback: impl FnMut(OverseasRealtimeData) + Send + 'static,
     ) -> Result<StreamController, OverseasRealtimeError> {
-        self.start_stream(symbol, OverseasRealtimeInfoType::RealTimeQuote, callback)
-            .await
+        self.start_stream(
+            symbol,
+            OverseasRealtimeInfoType::DelayedTradePrice,
+            callback,
+        )
+        .await
     }
 
-    // 실시간 호가(미국) 데이터용
-    pub async fn start_orderbook_stream(
+    // 2) Overseas Stock Real-Time Delayed Quotes (Asia) [Real-Time-008]
+    pub async fn start_delayed_quotes(
         &self,
         symbol: &str,
         callback: impl FnMut(OverseasOrderbookData) + Send + 'static,
     ) -> Result<StreamController, OverseasRealtimeError> {
-        self.start_stream(symbol, OverseasRealtimeInfoType::QuoteUSA, callback)
+        self.start_stream(symbol, OverseasRealtimeInfoType::DelayedQuoteAsia, callback)
             .await
     }
 
-    // 주문/체결 통보 데이터용
-    pub async fn start_notification_stream(
+    //3) Overseas Stock Real-Time Transaction Notification [Real-Time-009]
+    pub async fn start_transaction_notification(
         &self,
         symbol: &str,
         callback: impl FnMut(OverseasOrderNotificationData) + Send + 'static,
@@ -269,46 +274,63 @@ impl OverseasRealtimeClient {
         .await
     }
 
-    // 실시간 시세 데이터용 채널 반환 메서드
-    pub async fn start_quote_stream_channel(
+    //4) Overseas Stock Real-Time Quotes (U.S.) [Real-Time-021]
+    pub async fn start_quote_usa(
+        &self,
+        symbol: &str,
+        callback: impl FnMut(OverseasOrderNotificationData) + Send + 'static,
+    ) -> Result<StreamController, OverseasRealtimeError> {
+        self.start_stream(symbol, OverseasRealtimeInfoType::QuoteUSA, callback)
+            .await
+    }
+
+    /*channel */
+    //1) Overseas Stock Real-Time Delayed Transaction Price [Real-Time-007]
+    //실시간 지연 체결가
+    pub async fn start_delayed_transaction_price_channel(
         &self,
         symbol: &str,
     ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
     {
         self.start_stream_channel::<OverseasRealtimeData>(
             symbol,
-            OverseasRealtimeInfoType::RealTimeQuote,
+            OverseasRealtimeInfoType::DelayedTradePrice,
         )
         .await
     }
-
-    // 실시간 호가(미국) 데이터용 채널 반환 메서드
-    pub async fn start_orderbook_stream_channel(
+    //실시간 지연 호가
+    pub async fn start_delayed_quotes_channel(
         &self,
         symbol: &str,
-    ) -> Result<(mpsc::Receiver<OverseasOrderbookData>, StreamController), OverseasRealtimeError>
+    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
     {
-        self.start_stream_channel::<OverseasOrderbookData>(
+        self.start_stream_channel::<OverseasRealtimeData>(
             symbol,
-            OverseasRealtimeInfoType::QuoteUSA,
+            OverseasRealtimeInfoType::DelayedQuoteAsia,
         )
         .await
     }
-
-    // 주문/체결 통보 데이터용 채널 반환 메서드
-    pub async fn start_notification_stream_channel(
+    //실시간 체결 통보
+    pub async fn start_transaction_notification_channel(
         &self,
         symbol: &str,
-    ) -> Result<
-        (
-            mpsc::Receiver<OverseasOrderNotificationData>,
-            StreamController,
-        ),
-        OverseasRealtimeError,
-    > {
-        self.start_stream_channel::<OverseasOrderNotificationData>(
+    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
+    {
+        self.start_stream_channel::<OverseasRealtimeData>(
             symbol,
             OverseasRealtimeInfoType::TradeNotification,
+        )
+        .await
+    }
+    //실시간 호가 미국
+    pub async fn start_quote_channel(
+        &self,
+        symbol: &str,
+    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
+    {
+        self.start_stream_channel::<OverseasRealtimeData>(
+            symbol,
+            OverseasRealtimeInfoType::QuoteUSA,
         )
         .await
     }
