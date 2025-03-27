@@ -5,8 +5,8 @@ pub mod models;
 pub mod types;
 use futures_util::{SinkExt, stream::StreamExt};
 use models::{
-    OverseasOrderNotificationData, OverseasOrderbookData, OverseasQuoteData, OverseasRealtimeData,
-    RealtimeData,
+    OverseasDelayedQuotesData, OverseasDelayedTransactionPriceData, OverseasQuotesData,
+    OverseasTransacionNotificationData, RealtimeData,
 };
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 use serde::Deserialize;
@@ -240,7 +240,7 @@ impl OverseasRealtimeClient {
     pub async fn start_delayed_transaction_price(
         &self,
         symbol: &str,
-        callback: impl FnMut(OverseasRealtimeData) + Send + 'static,
+        callback: impl FnMut(OverseasDelayedTransactionPriceData) + Send + 'static,
     ) -> Result<StreamController, OverseasRealtimeError> {
         self.start_stream(
             symbol,
@@ -254,7 +254,7 @@ impl OverseasRealtimeClient {
     pub async fn start_delayed_quotes(
         &self,
         symbol: &str,
-        callback: impl FnMut(OverseasOrderbookData) + Send + 'static,
+        callback: impl FnMut(OverseasDelayedQuotesData) + Send + 'static,
     ) -> Result<StreamController, OverseasRealtimeError> {
         self.start_stream(symbol, OverseasRealtimeInfoType::DelayedQuoteAsia, callback)
             .await
@@ -264,7 +264,7 @@ impl OverseasRealtimeClient {
     pub async fn start_transaction_notification(
         &self,
         symbol: &str,
-        callback: impl FnMut(OverseasOrderNotificationData) + Send + 'static,
+        callback: impl FnMut(OverseasTransacionNotificationData) + Send + 'static,
     ) -> Result<StreamController, OverseasRealtimeError> {
         self.start_stream(
             symbol,
@@ -278,7 +278,7 @@ impl OverseasRealtimeClient {
     pub async fn start_quote_usa(
         &self,
         symbol: &str,
-        callback: impl FnMut(OverseasOrderNotificationData) + Send + 'static,
+        callback: impl FnMut(OverseasQuotesData) + Send + 'static,
     ) -> Result<StreamController, OverseasRealtimeError> {
         self.start_stream(symbol, OverseasRealtimeInfoType::QuoteUSA, callback)
             .await
@@ -290,9 +290,14 @@ impl OverseasRealtimeClient {
     pub async fn start_delayed_transaction_price_channel(
         &self,
         symbol: &str,
-    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
-    {
-        self.start_stream_channel::<OverseasRealtimeData>(
+    ) -> Result<
+        (
+            mpsc::Receiver<OverseasDelayedTransactionPriceData>,
+            StreamController,
+        ),
+        OverseasRealtimeError,
+    > {
+        self.start_stream_channel::<OverseasDelayedTransactionPriceData>(
             symbol,
             OverseasRealtimeInfoType::DelayedTradePrice,
         )
@@ -302,9 +307,9 @@ impl OverseasRealtimeClient {
     pub async fn start_delayed_quotes_channel(
         &self,
         symbol: &str,
-    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
+    ) -> Result<(mpsc::Receiver<OverseasDelayedQuotesData>, StreamController), OverseasRealtimeError>
     {
-        self.start_stream_channel::<OverseasRealtimeData>(
+        self.start_stream_channel::<OverseasDelayedQuotesData>(
             symbol,
             OverseasRealtimeInfoType::DelayedQuoteAsia,
         )
@@ -314,9 +319,14 @@ impl OverseasRealtimeClient {
     pub async fn start_transaction_notification_channel(
         &self,
         symbol: &str,
-    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
-    {
-        self.start_stream_channel::<OverseasRealtimeData>(
+    ) -> Result<
+        (
+            mpsc::Receiver<OverseasTransacionNotificationData>,
+            StreamController,
+        ),
+        OverseasRealtimeError,
+    > {
+        self.start_stream_channel::<OverseasTransacionNotificationData>(
             symbol,
             OverseasRealtimeInfoType::TradeNotification,
         )
@@ -326,13 +336,9 @@ impl OverseasRealtimeClient {
     pub async fn start_quote_channel(
         &self,
         symbol: &str,
-    ) -> Result<(mpsc::Receiver<OverseasRealtimeData>, StreamController), OverseasRealtimeError>
-    {
-        self.start_stream_channel::<OverseasRealtimeData>(
-            symbol,
-            OverseasRealtimeInfoType::QuoteUSA,
-        )
-        .await
+    ) -> Result<(mpsc::Receiver<OverseasQuotesData>, StreamController), OverseasRealtimeError> {
+        self.start_stream_channel::<OverseasQuotesData>(symbol, OverseasRealtimeInfoType::QuoteUSA)
+            .await
     }
 }
 

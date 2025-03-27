@@ -8,7 +8,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 애플 주식 데이터 스트림 시작 (나스닥)
     // OverseasRealtimeData 타입으로 데이터를 받음
     let controller = client
-        .start_quote_stream("DNASAAPL", |data| {
+        .start_delayed_transaction_price("DNASAAPL", |data| {
             println!("애플 주가: {}", data.last);
         })
         .await?;

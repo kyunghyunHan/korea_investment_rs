@@ -1,95 +1,7 @@
 use serde::{Deserialize, Serialize};
-
+//1) Overseas Stock Real-Time Delayed Transaction Price [Real-Time-007]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OverseasOrderNotificationData {
-    /// 고객 ID
-    pub cust_id: String,
-    /// 계좌번호
-    pub acnt_no: String,
-    /// 주문번호
-    pub oder_no: String,
-    /// 원주문번호
-    pub ooder_no: String,
-    /// 매도매수구분 (01:매도 02:매수 03:전매도 04:환매수)
-    pub seln_byov_cls: String,
-    /// 정정구분 (0:정상 1:정정 2:취소)
-    pub rctf_cls: String,
-    /// 주문종류2 (1:시장가 2:지정자 6:단주시장가 7:단주지정가 A:MOO B:LOO C:MOC D:LOC)
-    pub oder_kind2: String,
-    /// 주식 단축 종목코드
-    pub stck_shrn_iscd: String,
-    /// 체결수량 (주문통보의 경우 주문수량, 체결통보인 경우 체결수량)
-    pub cntg_qty: String,
-    /// 체결단가 (주문통보 시 주문단가, 체결통보 시 체결단가)
-    pub cntg_unpr: String,
-    /// 주식 체결 시간
-    pub stck_cntg_hour: String,
-    /// 거부여부 (0:정상 1:거부)
-    pub rfus_yn: String,
-    /// 체결여부 (1:주문,정정,취소,거부 2:체결)
-    pub cntg_yn: String,
-    /// 접수여부 (1:주문접수 2:확인 3:취소(FOK/IOC))
-    pub acpt_yn: String,
-    /// 지점번호
-    pub brnc_no: String,
-    /// 주문 수량 (주문통보인 경우 미출력, 체결통보인 경우 주문수량 출력)
-    pub oder_qty: String,
-    /// 계좌명
-    pub acnt_name: String,
-    /// 체결종목명
-    pub cntg_isnm: String,
-    /// 해외종목구분 (4:홍콩(HKD) 5:상해B(USD) 6:NASDAQ 7:NYSE 8:AMEX 9:OTCB C:홍콩(CNY) A:상해A(CNY) B:심천B(HKD) D:도쿄 E:하노이 F:호치민)
-    pub oder_cond: String,
-    /// 담보유형코드 (0:현금 15:해외주식담보대출)
-    pub debt_gb: String,
-    /// 담보대출일자 (YYYYMMDD)
-    pub debt_date: String,
-}
-
-pub trait RealtimeData: Sized {
-    /// 구분자(^)로 나뉜 문자열에서 구조체 생성
-    fn from_delimited_string(text: &str) -> Option<Self>;
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OverseasQuoteData {
-    /// 실시간종목코드
-    pub rsym: String,
-    /// 종목코드
-    pub symb: String,
-    /// 소수점자리수
-    pub zdiv: String,
-    /// 현지일자
-    pub xymd: String,
-    /// 현지시간
-    pub xhms: String,
-    /// 한국일자
-    pub kymd: String,
-    /// 한국시간
-    pub khms: String,
-    /// 매수총잔량
-    pub bvol: String,
-    /// 매도총잔량
-    pub avol: String,
-    /// 매수총잔량대비
-    pub bdvl: String,
-    /// 매도총잔량대비
-    pub advl: String,
-    /// 매수호가1
-    pub pbid1: String,
-    /// 매도호가1
-    pub pask1: String,
-    /// 매수잔량1
-    pub vbid1: String,
-    /// 매도잔량1
-    pub vask1: String,
-    /// 매수잔량대비1
-    pub dbid1: String,
-    /// 매도잔량대비1
-    pub dask1: String,
-}
-/// 해외 실시간 데이터 구조체
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OverseasRealtimeData {
+pub struct OverseasDelayedTransactionPriceData {
     /// 실시간종목코드
     pub rsym: String,
     /// 종목코드
@@ -143,10 +55,198 @@ pub struct OverseasRealtimeData {
     /// 시장구분 (1:장중, 2:장전, 3:장후)
     pub mtyp: String,
 }
+impl RealtimeData for OverseasDelayedTransactionPriceData {
+    fn from_delimited_string(text: &str) -> Option<Self> {
+        let fields: Vec<&str> = text.split('^').collect();
 
-/// 해외 실시간 호가 데이터 구조체
+        if fields.len() < 26 {
+            return None;
+        }
+
+        Some(Self {
+            rsym: fields[0].to_string(),
+            symb: fields[1].to_string(),
+            zdiv: fields[2].to_string(),
+            tymd: fields[3].to_string(),
+            xymd: fields[4].to_string(),
+            xhms: fields[5].to_string(),
+            kymd: fields[6].to_string(),
+            khms: fields[7].to_string(),
+            open: fields[8].to_string(),
+            high: fields[9].to_string(),
+            low: fields[10].to_string(),
+            last: fields[11].to_string(),
+            sign: fields[12].to_string(),
+            diff: fields[13].to_string(),
+            rate: fields[14].to_string(),
+            pbid: fields[15].to_string(),
+            pask: fields[16].to_string(),
+            vbid: fields[17].to_string(),
+            vask: fields[18].to_string(),
+            evol: fields[19].to_string(),
+            tvol: fields[20].to_string(),
+            tamt: fields[21].to_string(),
+            bivl: fields[22].to_string(),
+            asvl: fields[23].to_string(),
+            strn: fields[24].to_string(),
+            mtyp: fields[25].to_string(),
+        })
+    }
+}
+
+//2) Overseas Stock Real-Time Delayed Quotes (Asia) [Real-Time-008]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OverseasOrderbookData {
+pub struct OverseasDelayedQuotesData {
+    /// 실시간종목코드
+    pub rsym: String,
+    /// 종목코드
+    pub symb: String,
+    /// 소수점자리수
+    pub zdiv: String,
+    /// 현지일자
+    pub xymd: String,
+    /// 현지시간
+    pub xhms: String,
+    /// 한국일자
+    pub kymd: String,
+    /// 한국시간
+    pub khms: String,
+    /// 매수총잔량
+    pub bvol: String,
+    /// 매도총잔량
+    pub avol: String,
+    /// 매수총잔량대비
+    pub bdvl: String,
+    /// 매도총잔량대비
+    pub advl: String,
+    /// 매수호가1
+    pub pbid1: String,
+    /// 매도호가1
+    pub pask1: String,
+    /// 매수잔량1
+    pub vbid1: String,
+    /// 매도잔량1
+    pub vask1: String,
+    /// 매수잔량대비1
+    pub dbid1: String,
+    /// 매도잔량대비1
+    pub dask1: String,
+}
+impl RealtimeData for OverseasDelayedQuotesData {
+    fn from_delimited_string(text: &str) -> Option<Self> {
+        let fields: Vec<&str> = text.split('^').collect();
+
+        if fields.len() < 17 {
+            return None;
+        }
+
+        Some(Self {
+            rsym: fields[0].to_string(),
+            symb: fields[1].to_string(),
+            zdiv: fields[2].to_string(),
+            xymd: fields[3].to_string(),
+            xhms: fields[4].to_string(),
+            kymd: fields[5].to_string(),
+            khms: fields[6].to_string(),
+            bvol: fields[7].to_string(),
+            avol: fields[8].to_string(),
+            bdvl: fields[9].to_string(),
+            advl: fields[10].to_string(),
+            pbid1: fields[11].to_string(),
+            pask1: fields[12].to_string(),
+            vbid1: fields[13].to_string(),
+            vask1: fields[14].to_string(),
+            dbid1: fields[15].to_string(),
+            dask1: fields[16].to_string(),
+        })
+    }
+}
+
+//3) Overseas Stock Real-Time Transaction Notification [Real-Time-009]
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasTransacionNotificationData {
+    /// 고객 ID
+    pub cust_id: String,
+    /// 계좌번호
+    pub acnt_no: String,
+    /// 주문번호
+    pub oder_no: String,
+    /// 원주문번호
+    pub ooder_no: String,
+    /// 매도매수구분 (01:매도 02:매수 03:전매도 04:환매수)
+    pub seln_byov_cls: String,
+    /// 정정구분 (0:정상 1:정정 2:취소)
+    pub rctf_cls: String,
+    /// 주문종류2 (1:시장가 2:지정자 6:단주시장가 7:단주지정가 A:MOO B:LOO C:MOC D:LOC)
+    pub oder_kind2: String,
+    /// 주식 단축 종목코드
+    pub stck_shrn_iscd: String,
+    /// 체결수량 (주문통보의 경우 주문수량, 체결통보인 경우 체결수량)
+    pub cntg_qty: String,
+    /// 체결단가 (주문통보 시 주문단가, 체결통보 시 체결단가)
+    pub cntg_unpr: String,
+    /// 주식 체결 시간
+    pub stck_cntg_hour: String,
+    /// 거부여부 (0:정상 1:거부)
+    pub rfus_yn: String,
+    /// 체결여부 (1:주문,정정,취소,거부 2:체결)
+    pub cntg_yn: String,
+    /// 접수여부 (1:주문접수 2:확인 3:취소(FOK/IOC))
+    pub acpt_yn: String,
+    /// 지점번호
+    pub brnc_no: String,
+    /// 주문 수량 (주문통보인 경우 미출력, 체결통보인 경우 주문수량 출력)
+    pub oder_qty: String,
+    /// 계좌명
+    pub acnt_name: String,
+    /// 체결종목명
+    pub cntg_isnm: String,
+    /// 해외종목구분 (4:홍콩(HKD) 5:상해B(USD) 6:NASDAQ 7:NYSE 8:AMEX 9:OTCB C:홍콩(CNY) A:상해A(CNY) B:심천B(HKD) D:도쿄 E:하노이 F:호치민)
+    pub oder_cond: String,
+    /// 담보유형코드 (0:현금 15:해외주식담보대출)
+    pub debt_gb: String,
+    /// 담보대출일자 (YYYYMMDD)
+    pub debt_date: String,
+}
+impl RealtimeData for OverseasTransacionNotificationData {
+    fn from_delimited_string(text: &str) -> Option<Self> {
+        let fields: Vec<&str> = text.split('^').collect();
+
+        if fields.len() < 22 {
+            return None;
+        }
+
+        Some(Self {
+            cust_id: fields[0].to_string(),
+            acnt_no: fields[1].to_string(),
+            oder_no: fields[2].to_string(),
+            ooder_no: fields[3].to_string(),
+            seln_byov_cls: fields[4].to_string(),
+            rctf_cls: fields[5].to_string(),
+            oder_kind2: fields[6].to_string(),
+            stck_shrn_iscd: fields[7].to_string(),
+            cntg_qty: fields[8].to_string(),
+            cntg_unpr: fields[9].to_string(),
+            stck_cntg_hour: fields[10].to_string(),
+            rfus_yn: fields[11].to_string(),
+            cntg_yn: fields[12].to_string(),
+            acpt_yn: fields[13].to_string(),
+            brnc_no: fields[14].to_string(),
+            oder_qty: fields[15].to_string(),
+            acnt_name: fields[16].to_string(),
+            cntg_isnm: fields[17].to_string(),
+            oder_cond: fields[18].to_string(),
+            debt_gb: fields[19].to_string(),
+            debt_date: fields[20].to_string(),
+        })
+    }
+}
+
+//4) Overseas Stock Real-Time Quotes (U.S.) [Real-Time-021]
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasQuotesData {
     /// 실시간종목코드
     pub rsym: String,
     /// 종목코드
@@ -310,9 +410,8 @@ pub struct OverseasOrderbookData {
     /// 매도잔량대비10
     pub dask10: String,
 }
-// OverseasOrderbookData에 대한 RealtimeData 구현
 
-impl RealtimeData for OverseasOrderbookData {
+impl RealtimeData for OverseasQuotesData {
     fn from_delimited_string(text: &str) -> Option<Self> {
         let fields: Vec<&str> = text.split('^').collect();
 
@@ -416,107 +515,7 @@ impl RealtimeData for OverseasOrderbookData {
         })
     }
 }
-
-// OverseasOrderNotificationData에 대한 RealtimeData 구현
-impl RealtimeData for OverseasOrderNotificationData {
-    fn from_delimited_string(text: &str) -> Option<Self> {
-        let fields: Vec<&str> = text.split('^').collect();
-
-        if fields.len() < 22 {
-            return None;
-        }
-
-        Some(Self {
-            cust_id: fields[0].to_string(),
-            acnt_no: fields[1].to_string(),
-            oder_no: fields[2].to_string(),
-            ooder_no: fields[3].to_string(),
-            seln_byov_cls: fields[4].to_string(),
-            rctf_cls: fields[5].to_string(),
-            oder_kind2: fields[6].to_string(),
-            stck_shrn_iscd: fields[7].to_string(),
-            cntg_qty: fields[8].to_string(),
-            cntg_unpr: fields[9].to_string(),
-            stck_cntg_hour: fields[10].to_string(),
-            rfus_yn: fields[11].to_string(),
-            cntg_yn: fields[12].to_string(),
-            acpt_yn: fields[13].to_string(),
-            brnc_no: fields[14].to_string(),
-            oder_qty: fields[15].to_string(),
-            acnt_name: fields[16].to_string(),
-            cntg_isnm: fields[17].to_string(),
-            oder_cond: fields[18].to_string(),
-            debt_gb: fields[19].to_string(),
-            debt_date: fields[20].to_string(),
-        })
-    }
-}
-
-// OverseasQuoteData에 대한 RealtimeData 구현도 필요합니다
-impl RealtimeData for OverseasQuoteData {
-    fn from_delimited_string(text: &str) -> Option<Self> {
-        let fields: Vec<&str> = text.split('^').collect();
-
-        if fields.len() < 17 {
-            return None;
-        }
-
-        Some(Self {
-            rsym: fields[0].to_string(),
-            symb: fields[1].to_string(),
-            zdiv: fields[2].to_string(),
-            xymd: fields[3].to_string(),
-            xhms: fields[4].to_string(),
-            kymd: fields[5].to_string(),
-            khms: fields[6].to_string(),
-            bvol: fields[7].to_string(),
-            avol: fields[8].to_string(),
-            bdvl: fields[9].to_string(),
-            advl: fields[10].to_string(),
-            pbid1: fields[11].to_string(),
-            pask1: fields[12].to_string(),
-            vbid1: fields[13].to_string(),
-            vask1: fields[14].to_string(),
-            dbid1: fields[15].to_string(),
-            dask1: fields[16].to_string(),
-        })
-    }
-}
-impl RealtimeData for OverseasRealtimeData {
-    fn from_delimited_string(text: &str) -> Option<Self> {
-        let fields: Vec<&str> = text.split('^').collect();
-
-        if fields.len() < 26 {
-            return None;
-        }
-
-        Some(Self {
-            rsym: fields[0].to_string(),
-            symb: fields[1].to_string(),
-            zdiv: fields[2].to_string(),
-            tymd: fields[3].to_string(),
-            xymd: fields[4].to_string(),
-            xhms: fields[5].to_string(),
-            kymd: fields[6].to_string(),
-            khms: fields[7].to_string(),
-            open: fields[8].to_string(),
-            high: fields[9].to_string(),
-            low: fields[10].to_string(),
-            last: fields[11].to_string(),
-            sign: fields[12].to_string(),
-            diff: fields[13].to_string(),
-            rate: fields[14].to_string(),
-            pbid: fields[15].to_string(),
-            pask: fields[16].to_string(),
-            vbid: fields[17].to_string(),
-            vask: fields[18].to_string(),
-            evol: fields[19].to_string(),
-            tvol: fields[20].to_string(),
-            tamt: fields[21].to_string(),
-            bivl: fields[22].to_string(),
-            asvl: fields[23].to_string(),
-            strn: fields[24].to_string(),
-            mtyp: fields[25].to_string(),
-        })
-    }
+pub trait RealtimeData: Sized {
+    /// 구분자(^)로 나뉜 문자열에서 구조체 생성
+    fn from_delimited_string(text: &str) -> Option<Self>;
 }
