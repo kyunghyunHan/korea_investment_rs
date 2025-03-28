@@ -56,47 +56,7 @@ pub struct ApiHeader<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gt_uid: Option<&'a str>,
 }
-impl<'a> ApiHeader<'a> {
-    pub fn new(
-        custtype: CustType,
-        personalseckey: Option<&'a str>,
-        seq_no: Option<&'a str>,
-        phone_number: Option<&'a str>,
-        ip_addr: Option<&'a str>,
-        gt_uid: Option<&'a str>,
-    ) -> Result<Self, &'static str> {
-        // 법인인 경우 필수 필드 검증
-        if custtype == CustType::B {
-            if personalseckey.is_none() {
-                return Err("법인 사용자는 personalseckey가 필요합니다");
-            }
-            if seq_no.is_none() {
-                return Err("법인 사용자는 seq_no가 필요합니다");
-            }
-            if phone_number.is_none() {
-                return Err("법인 사용자는 phone_number가 필요합니다");
-            }
-            if ip_addr.is_none() {
-                return Err("법인 사용자는 ip_addr이 필요합니다");
-            }
-            if gt_uid.is_none() {
-                return Err("법인 사용자는 gt_uid가 필요합니다");
-            }
-        }
 
-        Ok(Self {
-            personalseckey,
-            tr_cont: None,
-            custtype,
-            seq_no,
-            mac_address: None,
-            phone_number,
-            ip_addr,
-            hashkey: None,
-            gt_uid,
-        })
-    }
-}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryParam<'a> {
     /// 조건 시장 분류 코드
