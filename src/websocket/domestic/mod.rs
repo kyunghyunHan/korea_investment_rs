@@ -9,7 +9,6 @@ use serde::Deserialize;
 use serde_json::json;
 use std::env;
 use std::error::Error;
-use std::fmt;
 use tokio::sync::mpsc;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 /// 해외 실시간 데이터 클라이언트
