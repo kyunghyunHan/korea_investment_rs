@@ -2,26 +2,35 @@
 use dotenv::dotenv;
 use korea_investment_rs::{
     domestic::quotations::{ApiHeader, QueryParam, get_inquire_price},
-    oauth::{Oauth, OauthType},
+    oauth::Oauth,
     types::CustType,
 };
 
-use std::env;
 #[tokio::main]
 async fn main() {
     #[cfg(feature = "ex")]
     dotenv().ok();
-    let app_key = env::var("PUB_KEY").expect("APP_KEY not set in .env file");
-    let app_secret = env::var("SCREST_KEY").expect("APP_SECRET not set in .env file");
-    let r#type = OauthType::PRACTICE;
 
-    let token = Oauth::from_env(CustType::P, false)
+    // PRACTICE(모의투자) 여부 선택
+    let practice = true;
+
+    // .env 기반으로 개인 고객(P) 토큰 발급
+    let token = Oauth::from_env(CustType::P, practice)
+    .await
+    .expect("토큰 발급 실패");
+
+    println!("발급된 토큰: {}", token.token);
+
+    // 종목코드: 삼성전자(005930)
+    let query = QueryParam::stock("005930");
+
+    // 개인 고객용 기본 헤더
+    let header = ApiHeader::personal();
+
+    // 현재가 조회
+    let result = get_inquire_price(token, header, query)
         .await
-        .expect("토큰 발급 실패");
-    println!("{}", token.token);
-    let query = QueryParam::new("J", "005930");
-    let header =
-        ApiHeader::new(CustType::P, None, None, None, None, None, None, None, None).unwrap();
-    let result = get_inquire_price(token, header, query).await.unwrap();
-    println!("{:?}", result);
+        .expect("조회 실패");
+
+    println!("{:#?}", result);
 }
