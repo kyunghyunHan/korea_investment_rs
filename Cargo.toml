@@ -30,6 +30,10 @@ path = "./examples/socket/creat_approval_key.rs"
 name = "get_stock_price"
 path = "./examples/domestic/get_stock_price.rs"
 
+[[example]]
+name = "get_inquire_price2"
+path = "./examples/domestic/get_inquire_price2.rs"
+
 
 [[example]]
 name = "get_inquire_daily_itemchartprice"

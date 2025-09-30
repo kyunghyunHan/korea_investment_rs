@@ -18,12 +18,8 @@ async fn main() {
     let token = Oauth::from_env_with_cache(CustType::P, practice)
         .await
         .expect("토큰 발급 실패");
-
-    println!("발급된 토큰: {}", token.token);
-
     // 종목코드: 삼성전자(005930)
     let query = QueryParam::stock("005930");
-
     // 개인 고객용 기본 헤더
     let header = ApiHeader::personal();
 
