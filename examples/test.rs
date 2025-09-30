@@ -1,26 +1,40 @@
-use korea_investment_rs::types::CustType;
-use korea_investment_rs::websocket::overseas::OverseasRealtimeClient;
+#[cfg(feature = "ex")]
+use dotenv::dotenv;
+use korea_investment_rs::{
+    oauth::Oauth,
+    overseas::{ApiHeader, OverseasPriceQuery, get_overseas_price}, // 해외 모듈 사용
+    types::CustType,
+};
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 클라이언트 생성
-    let client = OverseasRealtimeClient::from_env(CustType::P).await?;
+async fn main() {
+    #[cfg(feature = "ex")]
+    dotenv().ok();
 
-    // 애플 주식 데이터 스트림 시작 (나스닥)
-    // OverseasRealtimeData 타입으로 데이터를 받음
-    let controller = client
-        .start_delayed_transaction_price("DNASAAPL", |data| {
-            println!("애플 주가: {}", data.last);
-        })
-        .await?;
+    // 실전계좌 여부 (true면 모의, false면 실전)
+    let practice = false;
 
-    println!("Ctrl+C를 눌러 종료하세요.");
+    // .env 기반으로 개인 고객(P) 토큰 발급
+    let token = Oauth::from_env(CustType::P, practice)
+        .await
+        .expect("토큰 발급 실패");
 
-    // 프로그램이 종료되지 않도록 대기
-    tokio::signal::ctrl_c().await?;
+    println!("발급된 토큰: {}", token.token);
 
-    // 스트림 중지
-    controller.stop().await?;
-    println!("스트림이 중지되었습니다.");
+    // ✅ Apple (AAPL), 나스닥 거래소(NAS)
+    let query = OverseasPriceQuery {
+        auth: "P",         // 사용자 권한정보 (개인)
+        exchg_code: "NAS", // 나스닥
+        symbol: "AAPL",    // 애플 티커
+    };
 
-    Ok(())
+    // 개인 고객용 기본 헤더
+    let header = ApiHeader::personal();
+
+    // ✅ 해외 현재가 조회
+    let result = get_overseas_price(&token, &header, query)
+        .await
+        .expect("조회 실패");
+
+    println!("{:#?}", result);
 }
