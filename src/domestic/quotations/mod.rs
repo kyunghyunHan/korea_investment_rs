@@ -57,6 +57,7 @@ pub struct ApiHeader<'a> {
     pub gt_uid: Option<&'a str>,
 }
 impl<'a> ApiHeader<'a> {
+    /// 범용 생성자 (직접 모든 필드 제어)
     pub fn new(
         custtype: CustType,
         personalseckey: Option<&'a str>,
@@ -68,7 +69,6 @@ impl<'a> ApiHeader<'a> {
         hashkey: Option<&'a str>,
         gt_uid: Option<&'a str>,
     ) -> Result<Self, &'static str> {
-        // 법인(B)인 경우 필수 필드 체크
         if custtype == CustType::B {
             if personalseckey.is_none() {
                 return Err("법인 사용자는 personalseckey가 필요합니다");
@@ -99,8 +99,43 @@ impl<'a> ApiHeader<'a> {
             gt_uid,
         })
     }
-}
 
+    /// 개인 고객용 기본 헤더 (옵션 다 None)
+    pub fn personal() -> Self {
+        Self {
+            personalseckey: None,
+            tr_cont: None,
+            custtype: CustType::P,
+            seq_no: None,
+            mac_address: None,
+            phone_number: None,
+            ip_addr: None,
+            hashkey: None,
+            gt_uid: None,
+        }
+    }
+
+    /// 법인 고객용 생성자 (필수값 체크 포함)
+    pub fn corporate(
+        personalseckey: &'a str,
+        seq_no: &'a str,
+        phone_number: &'a str,
+        ip_addr: &'a str,
+        gt_uid: &'a str,
+    ) -> Self {
+        Self {
+            personalseckey: Some(personalseckey),
+            tr_cont: None,
+            custtype: CustType::B,
+            seq_no: Some(seq_no),
+            mac_address: None,
+            phone_number: Some(phone_number),
+            ip_addr: Some(ip_addr),
+            hashkey: None,
+            gt_uid: Some(gt_uid),
+        }
+    }
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryParam<'a> {
     /// 조건 시장 분류 코드
@@ -114,12 +149,19 @@ pub struct QueryParam<'a> {
     #[serde(rename = "FID_INPUT_ISCD")]
     pub stock_code: &'a str,
 }
+
 impl<'a> QueryParam<'a> {
+    /// 일반 생성자
     pub fn new(market_division_code: &'a str, stock_code: &'a str) -> Self {
         Self {
             market_division_code,
             stock_code,
         }
+    }
+
+    /// KRX(국내) 기본 시장코드 "J" + 종목코드
+    pub fn stock(stock_code: &'a str) -> Self {
+        Self::new("J", stock_code)
     }
 }
 

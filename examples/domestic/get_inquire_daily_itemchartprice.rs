@@ -1,10 +1,8 @@
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
 use korea_investment_rs::{
-    domestic::quotations::{
-        ApiHeader, IDIQuery, get_inquire_daily_itemchartprice, get_inquire_price,
-    },
-    oauth::{Oauth},
+    domestic::quotations::{ApiHeader, QueryParam, get_inquire_price},
+    oauth::Oauth,
     types::CustType,
 };
 
@@ -13,23 +11,17 @@ async fn main() {
     #[cfg(feature = "ex")]
     dotenv().ok();
 
-    // PRACTICE(모의투자) 여부 플래그
     let practice = true;
 
-    // 개인 고객(P) 기준 토큰 발급
+    // 토큰 발급
     let token = Oauth::from_env(CustType::P, practice)
         .await
-        .expect("Failed to get token");
-
-    println!("발급된 토큰: {:?}", token);
-
-    // 예시: 일봉 차트 조회
-    let query = IDIQuery::new("J", "005930", "20220101", "20220531", "D", "0");
-    let header =
-        ApiHeader::new(CustType::P, None, None, None, None, None, None, None, None).unwrap();
-    let result = get_inquire_daily_itemchartprice(token, header, query)
-        .await
-        .unwrap();
-
-    println!("조회 결과: {:?}", result);
+        .expect("토큰 발급 실패");
+    // 개인 고객용 기본 헤더
+    let header = ApiHeader::personal();
+    // 종목코드 005930 (삼성전자)
+    let query = QueryParam::stock("005930");
+    // 현재가 조회
+    let result = get_inquire_price(token, header, query).await.unwrap();
+    println!("{:#?}", result);
 }
