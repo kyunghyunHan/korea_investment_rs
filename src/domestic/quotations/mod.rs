@@ -1,106 +1,68 @@
 use crate::oauth::Oauth;
 use crate::types::CustType;
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
-use serde::{self, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::error::Error;
 
-/*Header
-주식 현재가
-GET
-*/
+/// 공통 API 호출 함수
+async fn call_api<T: DeserializeOwned>(
+    oauth: &Oauth,
+    header: &ApiHeader<'_>,
+    url: &str,
+    tr_id: &str,
+    query: &[(&str, &str)],
+) -> Result<T, Box<dyn Error>> {
+    let client = reqwest::Client::new();
+
+    let mut headers = HeaderMap::new();
+    headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+    headers.insert(
+        "authorization",
+        HeaderValue::from_str(&format!("Bearer {}", oauth.token))?,
+    );
+    headers.insert("appkey", HeaderValue::from_str(&oauth.app_key)?);
+    headers.insert("appsecret", HeaderValue::from_str(&oauth.app_secret)?);
+    if let Some(pk) = header.personalseckey {
+        headers.insert("personalseckey", HeaderValue::from_str(pk)?);
+    }
+    headers.insert("tr_id", HeaderValue::from_str(tr_id)?);
+
+    let response = client.get(url).headers(headers).query(query).send().await?;
+    let status = response.status();
+    if !status.is_success() {
+        let error_text = response.text().await?;
+        return Err(format!("API 요청 실패 ({}): {}", status, error_text).into());
+    }
+
+    let response_data: T = response.json().await?;
+    Ok(response_data)
+}
+
+//
+// -------------------- 공통 Header --------------------
+//
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiHeader<'a> {
-    /// OAuth 토큰이 필요한 API의 경우 발급한 Access token
-    /// 일반고객: 유효기간 1일, OAuth 2.0의 Client Credentials Grant 절차 준용
-    /// 법인: 유효기간 3개월, Refresh token 유효기간 1년, OAuth 2.0의 Authorization Code Grant 절차 준용
-
-    /// [법인 필수] 제휴사 회원 관리를 위한 고객식별키
     #[serde(skip_serializing_if = "Option::is_none")]
     pub personalseckey: Option<&'a str>,
-
-    /// 거래ID (예: 'FHKST01010100')
-
-    /// 연속 거래 여부
-    /// - 공백: 초기 조회
-    /// - N: 다음 데이터 조회 (output header의 tr_cont가 M일 경우)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tr_cont: Option<&'a str>,
-
-    /// 고객 타입
-    /// - B: 법인
-    /// - P: 개인
     pub custtype: CustType,
-
-    /// [법인 필수] 일련번호 (001)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub seq_no: Option<&'a str>,
-
-    /// 법인고객 혹은 개인고객의 Mac address 값
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<&'a str>,
-
-    /// [법인 필수] 제휴사APP을 사용하는 경우 사용자(회원) 핸드폰번호
-    /// ex) 01011112222 (하이픈 등 구분값 제거)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub phone_number: Option<&'a str>,
-
-    /// [법인 필수] 사용자(회원)의 IP Address
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ip_addr: Option<&'a str>,
-
-    /// [POST API 대상] Client가 요청하는 Request Body를 hashkey api로 생성한 Hash값
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hashkey: Option<&'a str>,
-
-    /// [법인 필수] 거래고유번호로 사용하므로 거래별로 UNIQUE해야 함
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gt_uid: Option<&'a str>,
 }
+
 impl<'a> ApiHeader<'a> {
-    /// 범용 생성자 (직접 모든 필드 제어)
-    pub fn new(
-        custtype: CustType,
-        personalseckey: Option<&'a str>,
-        tr_cont: Option<&'a str>,
-        seq_no: Option<&'a str>,
-        mac_address: Option<&'a str>,
-        phone_number: Option<&'a str>,
-        ip_addr: Option<&'a str>,
-        hashkey: Option<&'a str>,
-        gt_uid: Option<&'a str>,
-    ) -> Result<Self, &'static str> {
-        if custtype == CustType::B {
-            if personalseckey.is_none() {
-                return Err("법인 사용자는 personalseckey가 필요합니다");
-            }
-            if seq_no.is_none() {
-                return Err("법인 사용자는 seq_no가 필요합니다");
-            }
-            if phone_number.is_none() {
-                return Err("법인 사용자는 phone_number가 필요합니다");
-            }
-            if ip_addr.is_none() {
-                return Err("법인 사용자는 ip_addr이 필요합니다");
-            }
-            if gt_uid.is_none() {
-                return Err("법인 사용자는 gt_uid가 필요합니다");
-            }
-        }
-
-        Ok(Self {
-            personalseckey,
-            tr_cont,
-            custtype,
-            seq_no,
-            mac_address,
-            phone_number,
-            ip_addr,
-            hashkey,
-            gt_uid,
-        })
-    }
-
-    /// 개인 고객용 기본 헤더 (옵션 다 None)
     pub fn personal() -> Self {
         Self {
             personalseckey: None,
@@ -114,369 +76,122 @@ impl<'a> ApiHeader<'a> {
             gt_uid: None,
         }
     }
-
-    /// 법인 고객용 생성자 (필수값 체크 포함)
-    pub fn corporate(
-        personalseckey: &'a str,
-        seq_no: &'a str,
-        phone_number: &'a str,
-        ip_addr: &'a str,
-        gt_uid: &'a str,
-    ) -> Self {
-        Self {
-            personalseckey: Some(personalseckey),
-            tr_cont: None,
-            custtype: CustType::B,
-            seq_no: Some(seq_no),
-            mac_address: None,
-            phone_number: Some(phone_number),
-            ip_addr: Some(ip_addr),
-            hashkey: None,
-            gt_uid: Some(gt_uid),
-        }
-    }
 }
+
+//
+// -------------------- 현재가 조회 --------------------
+//
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryParam<'a> {
-    /// 조건 시장 분류 코드
-    /// - J: KRX
-    /// - NX: NXT
-    /// - UN: 통합
     #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
     pub market_division_code: &'a str,
-
-    /// 입력 종목코드 (예: 005930 삼성전자)
     #[serde(rename = "FID_INPUT_ISCD")]
     pub stock_code: &'a str,
 }
 
 impl<'a> QueryParam<'a> {
-    /// 일반 생성자
-    pub fn new(market_division_code: &'a str, stock_code: &'a str) -> Self {
+    pub fn stock(stock_code: &'a str) -> Self {
         Self {
-            market_division_code,
+            market_division_code: "J",
             stock_code,
         }
-    }
-
-    /// KRX(국내) 기본 시장코드 "J" + 종목코드
-    pub fn stock(stock_code: &'a str) -> Self {
-        Self::new("J", stock_code)
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StockPriceOutput {
-    /// 종목 상태 구분 코드
-    pub iscd_stat_cls_code: String,
-
-    /// 증거금 비율
-    pub marg_rate: String,
-
-    /// 대표 시장 한글 명
-    pub rprs_mrkt_kor_name: String,
-
-    /// 신 고가 저가 구분 코드
-    // pub new_hgpr_lwpr_cls_code: String,
-
-    /// 업종 한글 종목명
-    pub bstp_kor_isnm: String,
-
-    /// 임시 정지 여부
-    pub temp_stop_yn: String,
-
-    /// 시가 범위 연장 여부
-    pub oprc_rang_cont_yn: String,
-
-    /// 종가 범위 연장 여부
-    pub clpr_rang_cont_yn: String,
-
-    /// 신용 가능 여부
-    pub crdt_able_yn: String,
-
-    /// 보증금 비율 구분 코드
-    pub grmn_rate_cls_code: String,
-
-    /// ELW 발행 여부
-    pub elw_pblc_yn: String,
-
-    /// 주식 현재가
-    pub stck_prpr: String,
-
-    /// 전일 대비
-    pub prdy_vrss: String,
-
-    /// 전일 대비 부호
-    pub prdy_vrss_sign: String,
-
-    /// 전일 대비율
-    pub prdy_ctrt: String,
-
-    /// 누적 거래 대금
-    pub acml_tr_pbmn: String,
-
-    /// 누적 거래량
-    pub acml_vol: String,
-
-    /// 전일 대비 거래량 비율
-    pub prdy_vrss_vol_rate: String,
-
-    /// 주식 시가
-    pub stck_oprc: String,
-
-    /// 주식 최고가
-    pub stck_hgpr: String,
-
-    /// 주식 최저가
-    pub stck_lwpr: String,
-
-    /// 주식 상한가
-    pub stck_mxpr: String,
-
-    /// 주식 하한가
-    pub stck_llam: String,
-
-    /// 주식 기준가
-    pub stck_sdpr: String,
-
-    /// 가중 평균 주식 가격
-    pub wghn_avrg_stck_prc: String,
-
-    /// HTS 외국인 소진율
-    pub hts_frgn_ehrt: String,
-
-    /// 외국인 순매수 수량
-    pub frgn_ntby_qty: String,
-
-    /// 프로그램매매 순매수 수량
-    pub pgtr_ntby_qty: String,
-
-    /// 피벗 2차 디저항 가격
-    pub pvt_scnd_dmrs_prc: String,
-
-    /// 피벗 1차 디저항 가격
-    pub pvt_frst_dmrs_prc: String,
-
-    /// 피벗 포인트 값
-    pub pvt_pont_val: String,
-
-    /// 피벗 1차 디지지 가격
-    pub pvt_frst_dmsp_prc: String,
-
-    /// 피벗 2차 디지지 가격
-    pub pvt_scnd_dmsp_prc: String,
-
-    /// 디저항 값
-    pub dmrs_val: String,
-
-    /// 디지지 값
-    pub dmsp_val: String,
-
-    /// 자본금
-    pub cpfn: String,
-
-    /// 제한 폭 가격
-    pub rstc_wdth_prc: String,
-
-    /// 주식 액면가
-    pub stck_fcam: String,
-
-    /// 주식 대용가
-    pub stck_sspr: String,
-
-    /// 호가단위
-    pub aspr_unit: String,
-
-    /// HTS 매매 수량 단위 값
-    pub hts_deal_qty_unit_val: String,
-
-    /// 상장 주수
-    pub lstn_stcn: String,
-
-    /// HTS 시가총액
-    pub hts_avls: String,
-
-    /// PER
-    pub per: String,
-
-    /// PBR
-    pub pbr: String,
-
-    /// 결산 월
-    pub stac_month: String,
-
-    /// 거래량 회전율
-    pub vol_tnrt: String,
-
-    /// EPS
-    pub eps: String,
-
-    /// BPS
-    pub bps: String,
-
-    /// 250일 최고가
-    pub d250_hgpr: String,
-
-    /// 250일 최고가 일자
-    pub d250_hgpr_date: String,
-
-    /// 250일 최고가 대비 현재가 비율
-    pub d250_hgpr_vrss_prpr_rate: String,
-
-    /// 250일 최저가
-    pub d250_lwpr: String,
-
-    /// 250일 최저가 일자
-    pub d250_lwpr_date: String,
-
-    /// 250일 최저가 대비 현재가 비율
-    pub d250_lwpr_vrss_prpr_rate: String,
-
-    /// 주식 연중 최고가
-    pub stck_dryy_hgpr: String,
-
-    /// 연중 최고가 대비 현재가 비율
-    pub dryy_hgpr_vrss_prpr_rate: String,
-
-    /// 연중 최고가 일자
-    pub dryy_hgpr_date: String,
-
-    /// 주식 연중 최저가
-    pub stck_dryy_lwpr: String,
-
-    /// 연중 최저가 대비 현재가 비율
-    pub dryy_lwpr_vrss_prpr_rate: String,
-
-    /// 연중 최저가 일자
-    pub dryy_lwpr_date: String,
-
-    /// 52주일 최고가
-    pub w52_hgpr: String,
-
-    /// 52주일 최고가 대비 현재가 대비
-    pub w52_hgpr_vrss_prpr_ctrt: String,
-
-    /// 52주일 최고가 일자
-    pub w52_hgpr_date: String,
-
-    /// 52주일 최저가
-    pub w52_lwpr: String,
-
-    /// 52주일 최저가 대비 현재가 대비
-    pub w52_lwpr_vrss_prpr_ctrt: String,
-
-    /// 52주일 최저가 일자
-    pub w52_lwpr_date: String,
-
-    /// 전체 융자 잔고 비율
-    pub whol_loan_rmnd_rate: String,
-
-    /// 공매도가능여부
-    pub ssts_yn: String,
-
-    /// 주식 단축 종목코드
-    pub stck_shrn_iscd: String,
-
-    /// 액면가 통화명
-    pub fcam_cnnm: String,
-
-    /// 자본금 통화명
-    pub cpfn_cnnm: String,
-
-    /// 접근도
-    // pub apprch_rate: String,
-
-    /// 외국인 보유 수량
-    pub frgn_hldn_qty: String,
-
-    /// VI적용구분코드
-    pub vi_cls_code: String,
-
-    /// 시간외단일가VI적용구분코드
-    pub ovtm_vi_cls_code: String,
-
-    /// 최종 공매도 체결 수량
-    pub last_ssts_cntg_qty: String,
-
-    /// 투자유의여부
-    pub invt_caful_yn: String,
-
-    /// 시장경고코드
-    pub mrkt_warn_cls_code: String,
-
-    /// 단기과열여부
-    pub short_over_yn: String,
-
-    /// 정리매매여부
-    pub sltr_yn: String,
+    pub stck_prpr: String,    // 현재가
+    pub prdy_vrss: String,    // 전일 대비
+    pub prdy_ctrt: String,    // 전일 대비율
+    pub acml_tr_pbmn: String, // 누적 거래대금
+    pub acml_vol: String,     // 누적 거래량
+    pub stck_oprc: String,    // 시가
+    pub stck_hgpr: String,    // 고가
+    pub stck_lwpr: String,    // 저가
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StockPriceResponse {
-    /// 성공 실패 여부
     pub rt_cd: String,
-    /// 응답코드
     pub msg_cd: String,
-    /// 응답메세지
     pub msg1: String,
-    /// 응답상세
     pub output: StockPriceOutput,
 }
-/*주식 현제가 시세 */
+
 pub async fn get_inquire_price(
-    oauth: Oauth,
-    header: ApiHeader<'_>,
+    oauth: &Oauth,
+    header: &ApiHeader<'_>,
     query: QueryParam<'_>,
 ) -> Result<StockPriceOutput, Box<dyn Error>> {
-    let client = reqwest::Client::new();
-
     let url =
         "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-price";
 
-    let mut headers = HeaderMap::new();
-    headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    headers.insert(
-        "authorization",
-        HeaderValue::from_str(&format!("Bearer {}", oauth.token))?,
-    );
-    headers.insert("appkey", HeaderValue::from_str(&oauth.app_key)?);
-    if let Some(personalseckey) = header.personalseckey {
-        headers.insert("personalseckey", HeaderValue::from_str(personalseckey)?);
-    }
-    headers.insert("appsecret", HeaderValue::from_str(&oauth.app_secret)?);
-    headers.insert("tr_id", HeaderValue::from_static("FHKST01010100")); // 주식 현재가 시세 조회
+    let response: StockPriceResponse = call_api(
+        oauth,
+        header,
+        url,
+        "FHKST01010100",
+        &[
+            ("FID_COND_MRKT_DIV_CODE", query.market_division_code),
+            ("FID_INPUT_ISCD", query.stock_code),
+        ],
+    )
+    .await?;
 
-    let response = client
-        .get(url)
-        .headers(headers)
-        .query(&[
-            ("FID_COND_MRKT_DIV_CODE", &query.market_division_code), // 주식 시장 구분 코드 (J:주식)
-            ("FID_INPUT_ISCD", &query.stock_code),                   // 종목코드
-        ])
-        .send()
-        .await?;
-
-    // 응답 상태 확인
-    let status = response.status();
-    if !status.is_success() {
-        let error_text = response.text().await?;
-        return Err(format!("API 요청 실패 ({}): {}", status, error_text).into());
+    if response.rt_cd != "0" {
+        return Err(format!("API 응답 오류: {} ({})", response.msg1, response.msg_cd).into());
     }
 
-    // 응답을 StockPriceResponse 구조체로 파싱
-    let response_data: StockPriceResponse = response.json().await?;
+    Ok(response.output)
+}
 
-    // 응답 코드 확인
-    if response_data.rt_cd != "0" {
-        return Err(format!(
-            "API 응답 오류: {} (코드: {})",
-            response_data.msg1, response_data.msg_cd
-        )
-        .into());
+//
+// -------------------- 일봉 차트 조회 --------------------
+//
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IDIQuery<'a> {
+    #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
+    pub fid_cond_mark_div_code: &'a str,
+    #[serde(rename = "FID_INPUT_ISCD")]
+    pub fid_input_iscd: &'a str,
+    #[serde(rename = "FID_INPUT_DATE_1")]
+    pub fid_input_date_1: &'a str,
+    #[serde(rename = "FID_INPUT_DATE_2")]
+    pub fid_input_date_2: &'a str,
+    #[serde(rename = "FID_PERIOD_DIV_CODE")]
+    pub fid_period_div_code: &'a str,
+    #[serde(rename = "FID_ORG_ADJ_PRC")]
+    pub fid_org_adj_prc: &'a str,
+}
+
+impl<'a> IDIQuery<'a> {
+    pub fn daily(iscd: &'a str, from: &'a str, to: &'a str) -> Self {
+        Self {
+            fid_cond_mark_div_code: "J",
+            fid_input_iscd: iscd,
+            fid_input_date_1: from,
+            fid_input_date_2: to,
+            fid_period_div_code: "D", // 일봉
+            fid_org_adj_prc: "0",
+        }
     }
+}
 
-    // 성공 시 output1 데이터 반환
-    Ok(response_data.output)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ITIOutput1 {
+    pub stck_prpr: String,    // 현재가
+    pub acml_tr_pbmn: String, // 거래대금
+    pub acml_vol: String,     // 거래량
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ITIOutput2 {
+    pub stck_bsop_date: String, // 기준일
+    pub stck_clpr: String,      // 종가
+    pub stck_oprc: String,      // 시가
+    pub stck_hgpr: String,      // 고가
+    pub stck_lwpr: String,      // 저가
+    pub acml_vol: String,       // 거래량
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -488,174 +203,32 @@ pub struct ITIResponse {
     pub output2: Vec<ITIOutput2>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ITIOutput1 {
-    pub acml_tr_pbmn: String,
-    pub acml_vol: String,
-    pub askp: String,
-    pub bidp: String,
-    pub cpfn: String,
-    pub eps: String,
-    pub hts_avls: String,
-
-    // 필드가 누락될 수 있으므로 Option으로 처리
-    #[serde(default)]
-    pub hts_kor_isnm: Option<String>,
-
-    // 공백이 있는 필드 이름 처리
-    #[serde(rename = "itewhol_loan_rmnd_ratem name")]
-    pub itewhol_loan_rmnd_ratem_name: String,
-
-    pub lstn_stcn: String,
-    pub pbr: String,
-    pub per: String,
-    pub prdy_ctrt: String,
-    pub prdy_vol: String,
-    pub prdy_vrss: String,
-    pub prdy_vrss_sign: Option<String>, // 필요시 Option으로 처리
-    pub prdy_vrss_vol: String,
-    pub stck_fcam: String,
-    pub stck_hgpr: String,
-    pub stck_llam: String,
-    pub stck_lwpr: String,
-    pub stck_mxpr: String,
-    pub stck_oprc: String,
-    pub stck_prdy_clpr: String,
-    pub stck_prdy_hgpr: String,
-    pub stck_prdy_lwpr: String,
-    pub stck_prdy_oprc: String,
-    pub stck_prpr: String,
-
-    // 응답에 없는 필드는 Option으로 처리
-    #[serde(default)]
-    pub stck_shrn_iscd: Option<String>,
-
-    pub vol_tnrt: String,
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ITIOutput2 {
-    pub acml_tr_pbmn: String,
-    pub acml_vol: String,
-
-    pub flng_cls_code: String,
-
-    pub mod_yn: String,
-
-    pub prdy_vrss: String,
-
-    pub prdy_vrss_sign: String,
-
-    pub prtt_rate: String,
-
-    pub revl_issu_reas: String,
-
-    pub stck_bsop_date: String,
-
-    pub stck_clpr: String,
-
-    pub stck_hgpr: String,
-
-    pub stck_lwpr: String,
-
-    pub stck_oprc: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IDIQuery<'a> {
-    /// 조건 시장 분류 코드
-    /// - J: KRX
-    /// - NX: NXT
-    /// - UN: 통합
-    #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
-    pub fid_cond_mark_div_code: &'a str,
-
-    /// 입력 종목코드 (예: 005930 삼성전자)
-    #[serde(rename = "FID_INPUT_ISCD")]
-    pub fid_input_iscd: &'a str,
-
-    #[serde(rename = "FID_INPUT_DATE_1")]
-    pub fid_input_date_1: &'a str,
-    #[serde(rename = "FID_INPUT_DATE_2")]
-    pub fid_input_date_2: &'a str,
-    #[serde(rename = "FID_PERIOD_DIV_CODE")]
-    pub fid_period_div_code: &'a str,
-    #[serde(rename = "FID_ORG_ADJ_PRC")]
-    pub fid_org_adj_prc: &'a str,
-}
-impl<'a> IDIQuery<'a> {
-    pub fn new(
-        fid_cond_mark_div_code: &'a str,
-        fid_input_iscd: &'a str,
-        fid_input_date_1: &'a str,
-        fid_input_date_2: &'a str,
-        fid_period_div_code: &'a str,
-        fid_org_adj_prc: &'a str,
-    ) -> Self {
-        Self {
-            fid_cond_mark_div_code,
-            fid_input_iscd,
-            fid_input_date_1,
-            fid_input_date_2,
-            fid_period_div_code,
-            fid_org_adj_prc,
-        }
-    }
-}
-
 pub async fn get_inquire_daily_itemchartprice(
-    oauth: Oauth,
-    header: ApiHeader<'_>,
+    oauth: &Oauth,
+    header: &ApiHeader<'_>,
     query: IDIQuery<'_>,
 ) -> Result<ITIResponse, Box<dyn Error>> {
-    let client = reqwest::Client::new();
     let url = "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice";
 
-    let mut headers = HeaderMap::new();
-    headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    headers.insert(
-        "authorization",
-        HeaderValue::from_str(&format!("Bearer {}", oauth.token))?,
-    );
-    headers.insert("appkey", HeaderValue::from_str(&oauth.app_key)?);
-    headers.insert("appsecret", HeaderValue::from_str(&oauth.app_secret)?);
-    if let Some(personalseckey) = header.personalseckey {
-        headers.insert("personalseckey", HeaderValue::from_str(personalseckey)?);
-    }
-    headers.insert("tr_id", HeaderValue::from_static("FHKST03010100")); // 주식 현재가 시세 조회
+    let response: ITIResponse = call_api(
+        oauth,
+        header,
+        url,
+        "FHKST03010100",
+        &[
+            ("FID_COND_MRKT_DIV_CODE", query.fid_cond_mark_div_code),
+            ("FID_INPUT_ISCD", query.fid_input_iscd),
+            ("FID_INPUT_DATE_1", query.fid_input_date_1),
+            ("FID_INPUT_DATE_2", query.fid_input_date_2),
+            ("FID_PERIOD_DIV_CODE", query.fid_period_div_code),
+            ("FID_ORG_ADJ_PRC", query.fid_org_adj_prc),
+        ],
+    )
+    .await?;
 
-    let response = client
-        .get(url)
-        .headers(headers)
-        .query(&[
-            ("FID_COND_MRKT_DIV_CODE", &query.fid_cond_mark_div_code), // 주식 시장 구분 코드 (J:주식)
-            ("FID_INPUT_ISCD", &query.fid_input_iscd),                 // 종목코드
-            ("FID_INPUT_DATE_1", &query.fid_input_date_1),
-            ("FID_INPUT_DATE_2", &query.fid_input_date_2),
-            ("FID_PERIOD_DIV_CODE", &query.fid_period_div_code),
-            ("FID_ORG_ADJ_PRC", &query.fid_org_adj_prc),
-        ])
-        .send()
-        .await?;
-
-    // 응답 상태 확인
-    let status = response.status();
-    if !status.is_success() {
-        let error_text = response.text().await?;
-        return Err(format!("API 요청 실패 ({}): {}", status, error_text).into());
+    if response.rt_cd != "0" {
+        return Err(format!("API 응답 오류: {} ({})", response.msg1, response.msg_cd).into());
     }
 
-    // 응답을 StockPriceResponse 구조체로 파싱
-    // let response_data: ITIResponse = response.json().await?;
-    let response_data: ITIResponse = response.json().await?;
-
-    // 응답 코드 확인
-    if response_data.rt_cd != "0" {
-        return Err(format!(
-            "API 응답 오류: {} (코드: {})",
-            response_data.msg1, response_data.msg_cd
-        )
-        .into());
-    }
-    // 성공 시 output1 데이터 반환
-    Ok(response_data)
+    Ok(response)
 }

@@ -17,11 +17,15 @@ async fn main() {
     let token = Oauth::from_env(CustType::P, practice)
         .await
         .expect("토큰 발급 실패");
+
     // 개인 고객용 기본 헤더
     let header = ApiHeader::personal();
+
     // 종목코드 005930 (삼성전자)
     let query = QueryParam::stock("005930");
-    // 현재가 조회
-    let result = get_inquire_price(token, header, query).await.unwrap();
+
+    // ✅ 참조로 넘김 (&token, &header)
+    let result = get_inquire_price(&token, &header, query).await.unwrap();
+
     println!("{:#?}", result);
 }
