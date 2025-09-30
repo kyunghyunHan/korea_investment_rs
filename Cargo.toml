@@ -27,5 +27,14 @@ name = "creat_approval_key"
 path = "./examples/socket/creat_approval_key.rs"
 
 [[example]]
+name = "get_stock_price"
+path = "./examples/domestic/get_stock_price.rs"
+
+
+[[example]]
 name = "get_inquire_daily_itemchartprice"
 path = "./examples/domestic/get_inquire_daily_itemchartprice.rs"
+
+[[example]]
+name = "test"
+path = "./examples/test.rs"
