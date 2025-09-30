@@ -14,7 +14,7 @@ async fn main() {
     let practice = true;
 
     // 토큰 발급
-    let token = Oauth::from_env(CustType::P, practice)
+    let token = Oauth::from_env_with_cache(CustType::P, practice)
         .await
         .expect("토큰 발급 실패");
 
