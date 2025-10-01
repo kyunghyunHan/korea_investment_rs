@@ -28,3 +28,8 @@ ex = ["dotenv"]
 [[example]]
 name = "test"
 path = "./examples/test.rs"
+
+
+[[example]]
+name = "get_inquire_period_price"
+path = "./examples/domestic/get_inquire_period_price.rs"
