@@ -1,11 +1,6 @@
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
-use korea_investment_rs::{
-    domestic::quotations::{QueryParam, get_inquire_price},
-    oauth::Oauth,
-    types::CustType,
-    utils::ApiHeader,
-};
+use korea_investment_rs::{oauth::Oauth, provider::KISProvider, types::CustType, utils::ApiHeader};
 
 #[tokio::main]
 async fn main() {
@@ -18,15 +13,17 @@ async fn main() {
     let token = Oauth::from_env_with_cache(CustType::P, practice)
         .await
         .expect("토큰 발급 실패");
-
-    // 개인 고객용 기본 헤더
-    let header = ApiHeader::personal();
-
+    #[cfg(feature = "ex")]
+    // Provider 생성
+    let provider = KISProvider {
+        oauth: token,
+        header: ApiHeader::personal(),
+        market_type: korea_investment_rs::types::MarketType::Domestic, // 국내시장
+    };
+    #[cfg(feature = "ex")]
     // 종목코드 005930 (삼성전자)
-    let query = QueryParam::stock("005930");
-
-    // ✅ 참조로 넘김 (&token, &header)
-    let result = get_inquire_price(&token, &header, query).await.unwrap();
+    let result = provider.get_inquire_price("005930").await.unwrap();
+    #[cfg(feature = "ex")]
 
     println!("{:#?}", result);
 }

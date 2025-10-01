@@ -5,7 +5,9 @@ use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 use serde::{self, Deserialize, Serialize};
 use serde_json::json;
 use std::{
-    env, error::Error, fs,
+    env,
+    error::Error,
+    fs,
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -20,11 +22,11 @@ struct TokenResponse {
 #[derive(Debug, Serialize, Deserialize)]
 struct CachedToken {
     token: String,
-    created_at: u64,   // 발급된 시각 (UNIX timestamp)
-    expires_in: i32,   // 만료 시간 (초 단위)
+    created_at: u64, // 발급된 시각 (UNIX timestamp)
+    expires_in: i32, // 만료 시간 (초 단위)
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct Oauth {
     pub app_key: String,
     pub app_secret: String,
@@ -61,9 +63,17 @@ impl Oauth {
         });
 
         let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json; charset=UTF-8"));
+        headers.insert(
+            CONTENT_TYPE,
+            HeaderValue::from_static("application/json; charset=UTF-8"),
+        );
 
-        let response = client.post(&url).headers(headers).json(&body).send().await?;
+        let response = client
+            .post(&url)
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await?;
         let token_response: TokenResponse = response.json().await?;
 
         // 캐시 저장
@@ -84,7 +94,10 @@ impl Oauth {
     }
 
     /// 환경변수 + 캐시 활용 (자동 업데이트 포함)
-    pub async fn from_env_with_cache(cust_type: CustType, practice: bool) -> Result<Self, Box<dyn Error>> {
+    pub async fn from_env_with_cache(
+        cust_type: CustType,
+        practice: bool,
+    ) -> Result<Self, Box<dyn Error>> {
         #[cfg(feature = "ex")]
         dotenv().ok();
 

@@ -1,6 +1,6 @@
 [package]
 name = "korea_investment_rs"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 description = "Korea Investment & Securities Open API"
 license = "MIT OR Apache-2.0"
@@ -12,6 +12,7 @@ serde_json = "1.0.145"
 serde = { version = "1.0.228", features = ["derive"] }
 tokio-tungstenite = "0.28.0"
 futures-util = "0.3.31"
+async-trait = "0.1.89"
 
 
 [dependencies.dotenv]
@@ -22,22 +23,7 @@ optional = true
 [features]
 ex = ["dotenv"]
 
-[[example]]
-name = "creat_approval_key"
-path = "./examples/socket/creat_approval_key.rs"
 
-[[example]]
-name = "get_stock_price"
-path = "./examples/domestic/get_stock_price.rs"
-
-[[example]]
-name = "get_inquire_price2"
-path = "./examples/domestic/get_inquire_price2.rs"
-
-
-[[example]]
-name = "get_inquire_daily_itemchartprice"
-path = "./examples/domestic/get_inquire_daily_itemchartprice.rs"
 
 [[example]]
 name = "test"
