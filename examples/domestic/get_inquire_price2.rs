@@ -1,9 +1,10 @@
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
 use korea_investment_rs::{
-    domestic::quotations::{ApiHeader, QueryParam, get_inquire_price2}, // ✅ 2번 함수 임포트
+    domestic::quotations::{QueryParam, get_inquire_price2}, // ✅ 2번 함수 임포트
     oauth::Oauth,
     types::CustType,
+    utils::ApiHeader,
 };
 
 #[tokio::main]

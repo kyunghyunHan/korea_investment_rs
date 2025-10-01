@@ -1,10 +1,9 @@
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
 use korea_investment_rs::{
-    domestic::quotations::{PeriodPriceQuery, get_inquire_period_price},
     oauth::Oauth,
+    domestic::{ApiHeader, PeriodPriceQuery, get_inquire_period_price},
     types::CustType,
-    utils::ApiHeader,
 };
 
 #[tokio::main]
@@ -22,9 +21,9 @@ async fn main() {
 
     // ✅ 삼성전자 (005930), 2024년 전체 일봉 조회
     let query = PeriodPriceQuery::daily(
-        "005930",   // 종목코드
-        "20240101", // 시작일
-        "20241231", // 종료일
+        "005930",    // 종목코드
+        "20240101",  // 시작일
+        "20241231",  // 종료일
     );
 
     // ✅ 개인 고객용 기본 헤더

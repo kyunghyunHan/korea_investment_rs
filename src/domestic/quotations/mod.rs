@@ -1,82 +1,9 @@
 use crate::oauth::Oauth;
 use crate::types::CustType;
+use crate::utils::{ApiHeader, call_api};
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::error::Error;
-
-/// 공통 API 호출 함수
-async fn call_api<T: DeserializeOwned>(
-    oauth: &Oauth,
-    header: &ApiHeader<'_>,
-    url: &str,
-    tr_id: &str,
-    query: &[(&str, &str)],
-) -> Result<T, Box<dyn Error>> {
-    let client = reqwest::Client::new();
-
-    let mut headers = HeaderMap::new();
-    headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    headers.insert(
-        "authorization",
-        HeaderValue::from_str(&format!("Bearer {}", oauth.token))?,
-    );
-    headers.insert("appkey", HeaderValue::from_str(&oauth.app_key)?);
-    headers.insert("appsecret", HeaderValue::from_str(&oauth.app_secret)?);
-    if let Some(pk) = header.personalseckey {
-        headers.insert("personalseckey", HeaderValue::from_str(pk)?);
-    }
-    headers.insert("tr_id", HeaderValue::from_str(tr_id)?);
-
-    let response = client.get(url).headers(headers).query(query).send().await?;
-    let status = response.status();
-    if !status.is_success() {
-        let error_text = response.text().await?;
-        return Err(format!("API 요청 실패 ({}): {}", status, error_text).into());
-    }
-
-    let response_data: T = response.json().await?;
-    Ok(response_data)
-}
-
-//
-// -------------------- 공통 Header --------------------
-//
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ApiHeader<'a> {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub personalseckey: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tr_cont: Option<&'a str>,
-    pub custtype: CustType,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub seq_no: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub mac_address: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub phone_number: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub ip_addr: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub hashkey: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub gt_uid: Option<&'a str>,
-}
-
-impl<'a> ApiHeader<'a> {
-    pub fn personal() -> Self {
-        Self {
-            personalseckey: None,
-            tr_cont: None,
-            custtype: CustType::P,
-            seq_no: None,
-            mac_address: None,
-            phone_number: None,
-            ip_addr: None,
-            hashkey: None,
-            gt_uid: None,
-        }
-    }
-}
 
 //
 // -------------------- 현재가 조회 --------------------
@@ -238,60 +165,60 @@ pub async fn get_inquire_daily_itemchartprice(
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StockPrice2Output {
-    pub rprs_mrkt_kor_name: String,    // 대표 시장 한글 명
-    pub new_hgpr_lwpr_cls_code: Option<String>, // 신 고가 저가 구분 코드
-    pub mxpr_llam_cls_code: Option<String>,     // 상하한가 구분 코드
-    pub crdt_able_yn: Option<String>,           // 신용 가능 여부
-    pub stck_mxpr: Option<String>,              // 주식 상한가
-    pub elw_pblc_yn: Option<String>,            // ELW 발행 여부
+    pub rprs_mrkt_kor_name: String,               // 대표 시장 한글 명
+    pub new_hgpr_lwpr_cls_code: Option<String>,   // 신 고가 저가 구분 코드
+    pub mxpr_llam_cls_code: Option<String>,       // 상하한가 구분 코드
+    pub crdt_able_yn: Option<String>,             // 신용 가능 여부
+    pub stck_mxpr: Option<String>,                // 주식 상한가
+    pub elw_pblc_yn: Option<String>,              // ELW 발행 여부
     pub prdy_clpr_vrss_oprc_rate: Option<String>, // 전일 종가 대비 시가2 비율
-    pub crdt_rate: Option<String>,              // 신용 비율
-    pub marg_rate: Option<String>,              // 증거금 비율
-    pub lwpr_vrss_prpr: Option<String>,         // 최저가 대비 현재가
-    pub lwpr_vrss_prpr_sign: Option<String>,    // 최저가 대비 현재가 부호
+    pub crdt_rate: Option<String>,                // 신용 비율
+    pub marg_rate: Option<String>,                // 증거금 비율
+    pub lwpr_vrss_prpr: Option<String>,           // 최저가 대비 현재가
+    pub lwpr_vrss_prpr_sign: Option<String>,      // 최저가 대비 현재가 부호
     pub prdy_clpr_vrss_lwpr_rate: Option<String>, // 전일 종가 대비 최저가 비율
-    pub stck_lwpr: String,                      // 주식 최저가
-    pub hgpr_vrss_prpr: Option<String>,         // 최고가 대비 현재가
-    pub hgpr_vrss_prpr_sign: Option<String>,    // 최고가 대비 현재가 부호
+    pub stck_lwpr: String,                        // 주식 최저가
+    pub hgpr_vrss_prpr: Option<String>,           // 최고가 대비 현재가
+    pub hgpr_vrss_prpr_sign: Option<String>,      // 최고가 대비 현재가 부호
     pub prdy_clpr_vrss_hgpr_rate: Option<String>, // 전일 종가 대비 최고가 비율
-    pub stck_hgpr: String,                      // 주식 최고가
-    pub oprc_vrss_prpr: Option<String>,         // 시가2 대비 현재가
-    pub oprc_vrss_prpr_sign: Option<String>,    // 시가2 대비 현재가 부호
-    pub mang_issu_yn: Option<String>,           // 관리 종목 여부
-    pub divi_app_cls_code: Option<String>,      // 동시호가배분처리코드
-    pub short_over_yn: Option<String>,          // 단기과열여부
-    pub mrkt_warn_cls_code: Option<String>,     // 시장경고코드
-    pub invt_caful_yn: Option<String>,          // 투자유의여부
-    pub stange_runup_yn: Option<String>,        // 이상급등여부
-    pub ssts_hot_yn: Option<String>,            // 공매도과열 여부
-    pub low_current_yn: Option<String>,         // 저유동성 종목 여부
-    pub vi_cls_code: Option<String>,            // VI적용구분코드
-    pub short_over_cls_code: Option<String>,    // 단기과열구분코드
-    pub stck_llam: String,                      // 주식 하한가
-    pub new_lstn_cls_name: Option<String>,      // 신규 상장 구분 명
-    pub vlnt_deal_cls_name: Option<String>,     // 임의 매매 구분 명
-    pub flng_cls_name: Option<String>,          // 락 구분 이름
-    pub revl_issu_reas_name: Option<String>,    // 재평가 종목 사유 명
-    pub mrkt_warn_cls_name: Option<String>,     // 시장 경고 구분 명
-    pub stck_sdpr: String,                      // 주식 기준가
-    pub bstp_cls_code: String,                  // 업종 구분 코드
-    pub stck_prdy_clpr: String,                 // 주식 전일 종가
-    pub insn_pbnt_yn: Option<String>,           // 불성실 공시 여부
-    pub fcam_mod_cls_name: Option<String>,      // 액면가 변경 구분 명
-    pub stck_prpr: String,                      // 주식 현재가
-    pub prdy_vrss: String,                      // 전일 대비
-    pub prdy_vrss_sign: String,                 // 전일 대비 부호
-    pub prdy_ctrt: String,                      // 전일 대비율
-    pub acml_tr_pbmn: String,                   // 누적 거래 대금
-    pub acml_vol: String,                       // 누적 거래량
-    pub prdy_vrss_vol_rate: Option<String>,     // 전일 대비 거래량 비율
-    pub bstp_kor_isnm: Option<String>,          // 업종 한글 종목명
-    pub sltr_yn: Option<String>,                // 정리매매 여부
-    pub trht_yn: Option<String>,                // 거래정지 여부
-    pub oprc_rang_cont_yn: Option<String>,      // 시가 범위 연장 여부
-    pub vlnt_fin_cls_code: Option<String>,      // 임의 종료 구분 코드
-    pub stck_oprc: String,                      // 주식 시가2
-    pub prdy_vol: String,                       // 전일 거래량
+    pub stck_hgpr: String,                        // 주식 최고가
+    pub oprc_vrss_prpr: Option<String>,           // 시가2 대비 현재가
+    pub oprc_vrss_prpr_sign: Option<String>,      // 시가2 대비 현재가 부호
+    pub mang_issu_yn: Option<String>,             // 관리 종목 여부
+    pub divi_app_cls_code: Option<String>,        // 동시호가배분처리코드
+    pub short_over_yn: Option<String>,            // 단기과열여부
+    pub mrkt_warn_cls_code: Option<String>,       // 시장경고코드
+    pub invt_caful_yn: Option<String>,            // 투자유의여부
+    pub stange_runup_yn: Option<String>,          // 이상급등여부
+    pub ssts_hot_yn: Option<String>,              // 공매도과열 여부
+    pub low_current_yn: Option<String>,           // 저유동성 종목 여부
+    pub vi_cls_code: Option<String>,              // VI적용구분코드
+    pub short_over_cls_code: Option<String>,      // 단기과열구분코드
+    pub stck_llam: String,                        // 주식 하한가
+    pub new_lstn_cls_name: Option<String>,        // 신규 상장 구분 명
+    pub vlnt_deal_cls_name: Option<String>,       // 임의 매매 구분 명
+    pub flng_cls_name: Option<String>,            // 락 구분 이름
+    pub revl_issu_reas_name: Option<String>,      // 재평가 종목 사유 명
+    pub mrkt_warn_cls_name: Option<String>,       // 시장 경고 구분 명
+    pub stck_sdpr: String,                        // 주식 기준가
+    pub bstp_cls_code: String,                    // 업종 구분 코드
+    pub stck_prdy_clpr: String,                   // 주식 전일 종가
+    pub insn_pbnt_yn: Option<String>,             // 불성실 공시 여부
+    pub fcam_mod_cls_name: Option<String>,        // 액면가 변경 구분 명
+    pub stck_prpr: String,                        // 주식 현재가
+    pub prdy_vrss: String,                        // 전일 대비
+    pub prdy_vrss_sign: String,                   // 전일 대비 부호
+    pub prdy_ctrt: String,                        // 전일 대비율
+    pub acml_tr_pbmn: String,                     // 누적 거래 대금
+    pub acml_vol: String,                         // 누적 거래량
+    pub prdy_vrss_vol_rate: Option<String>,       // 전일 대비 거래량 비율
+    pub bstp_kor_isnm: Option<String>,            // 업종 한글 종목명
+    pub sltr_yn: Option<String>,                  // 정리매매 여부
+    pub trht_yn: Option<String>,                  // 거래정지 여부
+    pub oprc_rang_cont_yn: Option<String>,        // 시가 범위 연장 여부
+    pub vlnt_fin_cls_code: Option<String>,        // 임의 종료 구분 코드
+    pub stck_oprc: String,                        // 주식 시가2
+    pub prdy_vol: String,                         // 전일 거래량
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -308,8 +235,7 @@ pub async fn get_inquire_price2(
     header: &ApiHeader<'_>,
     query: QueryParam<'_>,
 ) -> Result<StockPrice2Output, Box<dyn Error>> {
-    let url =
-        "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-price-2";
+    let url = "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-price-2";
 
     let response: StockPrice2Response = call_api(
         oauth,
@@ -328,4 +254,349 @@ pub async fn get_inquire_price2(
     }
 
     Ok(response.output)
+}
+
+// 요청 파라미터
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PeriodPriceQuery<'a> {
+    #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
+    pub fid_cond_mrkt_div_code: &'a str, // 조건 시장 분류 코드
+    #[serde(rename = "FID_INPUT_ISCD")]
+    pub fid_input_iscd: &'a str, // 종목 코드
+    #[serde(rename = "FID_INPUT_DATE_1")]
+    pub fid_input_date_1: &'a str, // 조회 시작일자
+    #[serde(rename = "FID_INPUT_DATE_2")]
+    pub fid_input_date_2: &'a str, // 조회 종료일자
+    #[serde(rename = "FID_PERIOD_DIV_CODE")]
+    pub fid_period_div_code: &'a str, // 기간 분류 코드 (D:일봉, W:주봉, M:월봉, Y:년봉)
+    #[serde(rename = "FID_ORG_ADJ_PRC")]
+    pub fid_org_adj_prc: &'a str, // 0: 수정주가, 1: 원주가
+}
+
+impl<'a> PeriodPriceQuery<'a> {
+    pub fn daily(iscd: &'a str, from: &'a str, to: &'a str) -> Self {
+        Self {
+            fid_cond_mrkt_div_code: "J",
+            fid_input_iscd: iscd,
+            fid_input_date_1: from,
+            fid_input_date_2: to,
+            fid_period_div_code: "D",
+            fid_org_adj_prc: "0",
+        }
+    }
+    pub fn weekly(iscd: &'a str, from: &'a str, to: &'a str) -> Self {
+        Self {
+            fid_period_div_code: "W",
+            ..Self::daily(iscd, from, to)
+        }
+    }
+    pub fn monthly(iscd: &'a str, from: &'a str, to: &'a str) -> Self {
+        Self {
+            fid_period_div_code: "M",
+            ..Self::daily(iscd, from, to)
+        }
+    }
+    pub fn yearly(iscd: &'a str, from: &'a str, to: &'a str) -> Self {
+        Self {
+            fid_period_div_code: "Y",
+            ..Self::daily(iscd, from, to)
+        }
+    }
+}
+
+// 응답 구조체
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PeriodPriceOutput1 {
+    pub prdy_vrss: String,                       // 전일 대비
+    pub prdy_vrss_sign: String,                  // 전일 대비 부호
+    pub prdy_ctrt: String,                       // 전일 대비율
+    pub stck_prdy_clpr: String,                  // 전일 종가
+    pub acml_vol: String,                        // 누적 거래량
+    pub acml_tr_pbmn: String,                    // 누적 거래 대금
+    pub hts_kor_isnm: String,                    // HTS 한글 종목명
+    pub stck_prpr: String,                       // 현재가
+    pub stck_shrn_iscd: String,                  // 단축 종목코드
+    pub prdy_vol: String,                        // 전일 거래량
+    pub stck_mxpr: String,                       // 상한가
+    pub stck_llam: String,                       // 하한가
+    pub stck_oprc: String,                       // 시가
+    pub stck_hgpr: String,                       // 최고가
+    pub stck_lwpr: String,                       // 최저가
+    pub stck_prdy_oprc: String,                  // 전일 시가
+    pub stck_prdy_hgpr: String,                  // 전일 최고가
+    pub stck_prdy_lwpr: String,                  // 전일 최저가
+    pub askp: String,                            // 매도호가
+    pub bidp: String,                            // 매수호가
+    pub prdy_vrss_vol: String,                   // 전일 대비 거래량
+    pub vol_tnrt: String,                        // 거래량 회전율
+    pub stck_fcam: String,                       // 액면가
+    pub lstn_stcn: String,                       // 상장주식수
+    pub cpfn: String,                            // 자본금
+    pub hts_avls: String,                        // 시가총액
+    pub per: String,                             // PER
+    pub eps: String,                             // EPS
+    pub pbr: String,                             // PBR
+    pub itewhol_loan_rmnd_ratem: Option<String>, // ⚡ 전체 융자 잔고 비율 (없을 수 있음!)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PeriodPriceOutput2 {
+    pub stck_bsop_date: String, // 영업일자
+    pub stck_clpr: String,      // 종가
+    pub stck_oprc: String,      // 시가
+    pub stck_hgpr: String,      // 고가
+    pub stck_lwpr: String,      // 저가
+    pub acml_vol: String,       // 누적 거래량
+    pub acml_tr_pbmn: String,   // 누적 거래대금
+    pub flng_cls_code: String,  // 락 구분 코드
+    pub prtt_rate: String,      // 분할 비율
+    pub mod_yn: String,         // 변경 여부
+    pub prdy_vrss_sign: String, // 전일 대비 부호
+    pub prdy_vrss: String,      // 전일 대비
+    pub revl_issu_reas: String, // 재평가 사유 코드
+}
+
+// 최종 응답
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PeriodPriceResponse {
+    pub rt_cd: String,
+    pub msg_cd: String,
+    pub msg1: String,
+    pub output1: PeriodPriceOutput1,
+    pub output2: Vec<PeriodPriceOutput2>,
+}
+
+/// 기간별 시세 조회 함수
+pub async fn get_inquire_period_price(
+    oauth: &Oauth,
+    header: &ApiHeader<'_>,
+    query: PeriodPriceQuery<'_>,
+) -> Result<PeriodPriceResponse, Box<dyn Error>> {
+    let url = "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice";
+
+    let response: PeriodPriceResponse = call_api(
+        oauth,
+        header,
+        url,
+        "FHKST03010100", // 실전 & 모의 동일 TR ID
+        &[
+            ("FID_COND_MRKT_DIV_CODE", query.fid_cond_mrkt_div_code),
+            ("FID_INPUT_ISCD", query.fid_input_iscd),
+            ("FID_INPUT_DATE_1", query.fid_input_date_1),
+            ("FID_INPUT_DATE_2", query.fid_input_date_2),
+            ("FID_PERIOD_DIV_CODE", query.fid_period_div_code),
+            ("FID_ORG_ADJ_PRC", query.fid_org_adj_prc),
+        ],
+    )
+    .await?;
+
+    if response.rt_cd != "0" {
+        return Err(format!("API 응답 오류: {} ({})", response.msg1, response.msg_cd).into());
+    }
+
+    Ok(response)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiResponseBase {
+    pub rt_cd: String,
+    pub msg_cd: String,
+    pub msg1: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TicksQuery<'a> {
+    #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
+    pub mrkt_div: &'a str, // "J"
+    #[serde(rename = "FID_INPUT_ISCD")]
+    pub iscd: &'a str, // 종목코드 (단축코드)
+                       // 필요 시 페이징/건수 파라미터가 있는 변형도 있음
+}
+
+impl<'a> TicksQuery<'a> {
+    pub fn new(iscd: &'a str) -> Self {
+        Self {
+            mrkt_div: "J",
+            iscd,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Tick {
+    pub stck_cntg_hour: String, // 체결시각 HHMMSS
+    pub stck_prpr: String,      // 체결가
+    pub cntg_vol: String,       // 체결량
+    pub prdy_vrss_sign: Option<String>,
+    pub prdy_vrss: Option<String>,
+    pub prdy_ctrt: Option<String>,
+    pub askp: Option<String>,
+    pub bidp: Option<String>,
+    pub seln_byby_cntg_csnu: Option<String>, // 매도/매수 체결 구분 (있을 경우)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TicksResponse {
+    #[serde(flatten)]
+    pub base: ApiResponseBase,
+    pub output: Vec<Tick>,
+}
+
+/// 주식현재가 체결 (최근 틱)
+pub async fn get_recent_ticks(
+    oauth: &Oauth,
+    header: &ApiHeader<'_>,
+    q: TicksQuery<'_>,
+) -> Result<Vec<Tick>, Box<dyn Error>> {
+    let url =
+        "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-ccnl"; // 체결
+    let resp: TicksResponse = call_api(
+        oauth,
+        header,
+        url,
+        "FHKST01010300",
+        &[
+            ("FID_COND_MRKT_DIV_CODE", q.mrkt_div),
+            ("FID_INPUT_ISCD", q.iscd),
+        ],
+    )
+    .await?;
+
+    if resp.base.rt_cd != "0" {
+        return Err(format!("API 응답 오류: {} ({})", resp.base.msg1, resp.base.msg_cd).into());
+    }
+    Ok(resp.output)
+}
+// domestic/quotations/intra_today.rs
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TodayMinuteQuery<'a> {
+    #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
+    pub mrkt_div: &'a str, // "J"
+    #[serde(rename = "FID_INPUT_ISCD")]
+    pub iscd: &'a str, // 종목코드
+    #[serde(rename = "FID_INPUT_HOUR_1")]
+    pub interval: &'a str, // 분봉 간격 (예: "1" "3" "5" "10")
+}
+
+impl<'a> TodayMinuteQuery<'a> {
+    pub fn new(iscd: &'a str, interval_min: &'a str) -> Self {
+        Self {
+            mrkt_div: "J",
+            iscd,
+            interval: interval_min,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TodayMinuteCandle {
+    pub stck_cntg_hour: String, // HHMM
+    pub stck_oprc: String,
+    pub stck_hgpr: String,
+    pub stck_lwpr: String,
+    pub stck_prpr: String, // 종가
+    pub acml_tr_pbmn: Option<String>,
+    pub acml_vol: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TodayMinuteResponse {
+    #[serde(flatten)]
+    pub base: ApiResponseBase,
+    pub output: Vec<TodayMinuteCandle>,
+}
+
+/// 당일 분봉
+pub async fn get_today_minutes(
+    oauth: &Oauth,
+    header: &ApiHeader<'_>,
+    q: TodayMinuteQuery<'_>,
+) -> Result<Vec<TodayMinuteCandle>, Box<dyn Error>> {
+    let url = "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-timechartprice";
+    let resp: TodayMinuteResponse = call_api(
+        oauth,
+        header,
+        url,
+        "FHKST03010200",
+        &[
+            ("FID_COND_MRKT_DIV_CODE", q.mrkt_div),
+            ("FID_INPUT_ISCD", q.iscd),
+            ("FID_INPUT_HOUR_1", q.interval),
+        ],
+    )
+    .await?;
+
+    if resp.base.rt_cd != "0" {
+        return Err(format!("API 응답 오류: {} ({})", resp.base.msg1, resp.base.msg_cd).into());
+    }
+    Ok(resp.output)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ByDayMinutesQuery<'a> {
+    #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
+    pub mrkt_div: &'a str, // "J"
+    #[serde(rename = "FID_INPUT_ISCD")]
+    pub iscd: &'a str, // 종목
+    #[serde(rename = "FID_INPUT_DATE_1")]
+    pub yyyymmdd: &'a str, // 조회 일자
+    #[serde(rename = "FID_INPUT_HOUR_1")]
+    pub interval: &'a str, // 분봉 간격 ("1","3","5",…)
+}
+
+impl<'a> ByDayMinutesQuery<'a> {
+    pub fn new(iscd: &'a str, yyyymmdd: &'a str, interval: &'a str) -> Self {
+        Self {
+            mrkt_div: "J",
+            iscd,
+            yyyymmdd,
+            interval,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ByDayMinuteCandle {
+    pub stck_cntg_hour: String, // HHMM
+    pub stck_oprc: String,
+    pub stck_hgpr: String,
+    pub stck_lwpr: String,
+    pub stck_prpr: String,
+    pub acml_vol: String,
+    pub acml_tr_pbmn: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ByDayMinutesResponse {
+    #[serde(flatten)]
+    pub base: ApiResponseBase,
+    pub output: Vec<ByDayMinuteCandle>,
+}
+
+/// 특정 일자의 분봉
+pub async fn get_minutes_by_day(
+    oauth: &Oauth,
+    header: &ApiHeader<'_>,
+    q: ByDayMinutesQuery<'_>,
+) -> Result<Vec<ByDayMinuteCandle>, Box<dyn Error>> {
+    let url = "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice";
+    let resp: ByDayMinutesResponse = call_api(
+        oauth,
+        header,
+        url,
+        "FHKST03010230",
+        &[
+            ("FID_COND_MRKT_DIV_CODE", q.mrkt_div),
+            ("FID_INPUT_ISCD", q.iscd),
+            ("FID_INPUT_DATE_1", q.yyyymmdd),
+            ("FID_INPUT_HOUR_1", q.interval),
+        ],
+    )
+    .await?;
+
+    if resp.base.rt_cd != "0" {
+        return Err(format!("API 응답 오류: {} ({})", resp.base.msg1, resp.base.msg_cd).into());
+    }
+    Ok(resp.output)
 }

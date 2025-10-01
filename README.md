@@ -110,17 +110,67 @@ MIT License
 
 
 ## Example
-### 1.Oauth
-### 2.Domestic(국내시장)
 
-#### 1)
-#### 2)
-- 
-### 3.Overseas(해외시장)
-#### 1) 
-### 4.Socket
-#### 1)해외주식 실시간지연체결가[실시간-007]
-- 
-#### 2)해외주식 실시간지연호가(아시아)[실시간-008]
-#### 3)해외주식 실시간체결통보[실시간-009]
-#### 4)해외주식 실시간호가(미국)[실시간-021]
+
+## Korea Investment RS API 구현 현황
+
+---
+
+### 1. Oauth
+- ✅ 토큰 발급 [`Oauth::from_env`, `Oauth::from_env_with_cache`]
+
+---
+
+### 2. Domestic (국내시장)
+
+#### 1) 현재가/시세
+- ✅ 주식현재가 시세 [`get_inquire_price`]
+- ✅ 주식현재가 시세2 [`get_inquire_price2`]
+- ✅ 주식현재가 체결 [`get_recent_ticks`]
+- ❌ <span style="color:red">주식현재가 일자별</span>
+- ❌ <span style="color:red">주식현재가 호가/예상체결</span>
+- ❌ <span style="color:red">주식현재가 투자자</span>
+- ❌ <span style="color:red">주식현재가 회원사</span>
+
+#### 2) 차트/기간별
+- ✅ 국내주식기간별시세(일/주/월/년) [`get_inquire_period_price`]
+- ✅ 주식당일분봉조회 [`get_today_minutes`]
+- ✅ 주식일별분봉조회 [`get_minutes_by_day`]
+
+#### 3) 시간외
+- ❌ <span style="color:red">주식현재가 당일시간대별체결</span>
+- ❌ <span style="color:red">주식현재가 시간외일자별주가</span>
+- ❌ <span style="color:red">주식현재가 시간외시간별체결</span>
+- ❌ <span style="color:red">국내주식 시간외현재가</span>
+- ❌ <span style="color:red">국내주식 시간외호가</span>
+- ❌ <span style="color:red">국내주식 장마감 예상체결가</span>
+
+#### 4) ETF / ETN
+- ❌ <span style="color:red">ETF/ETN 현재가</span>
+- ❌ <span style="color:red">ETF 구성종목시세</span>
+- ❌ <span style="color:red">NAV 비교추이(종목)</span>
+- ❌ <span style="color:red">NAV 비교추이(일)</span>
+- ❌ <span style="color:red">NAV 비교추이(분)</span>
+
+---
+
+### 3. Overseas (해외시장)
+- ✅ 해외주식 현재가 [`get_overseas_price`]
+- ❌ <span style="color:red">해외주식 기간별 시세</span>
+- ❌ <span style="color:red">해외주식 일자별/분봉별 시세</span>
+
+---
+
+### 4. Socket
+
+#### 1) 해외주식 실시간지연체결가 [실시간-007]
+- ❌ <span style="color:red">미구현</span>
+
+#### 2) 해외주식 실시간지연호가(아시아) [실시간-008]
+- ❌ <span style="color:red">미구현</span>
+
+#### 3) 해외주식 실시간체결통보 [실시간-009]
+- ❌ <span style="color:red">미구현</span>
+
+#### 4) 해외주식 실시간호가(미국) [실시간-021]
+- ❌ <span style="color:red">미구현</span>
