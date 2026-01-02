@@ -1,6 +1,6 @@
 [package]
 name = "korea_investment_rs"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2024"
 description = "Korea Investment & Securities Open API"
 license = "MIT OR Apache-2.0"

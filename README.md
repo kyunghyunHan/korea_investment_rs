@@ -110,6 +110,7 @@ MIT License
 
 
 ## Example
+- 해외주식 상품기본정보: `cargo run --example get_overseas_product_info --features ex`
 
 
 ## Korea Investment RS API 구현 현황
@@ -156,6 +157,7 @@ MIT License
 
 ### 3. Overseas (해외시장)
 - ✅ 해외주식 현재가 [`get_overseas_price`]
+- ✅ 해외주식 상품기본정보 [`get_overseas_product_info`]
 - ❌ <span style="color:red">해외주식 기간별 시세</span>
 - ❌ <span style="color:red">해외주식 일자별/분봉별 시세</span>
 
