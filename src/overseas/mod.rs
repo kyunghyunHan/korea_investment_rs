@@ -366,3 +366,81 @@ pub async fn get_overseas_minutes_by_day(
     }
     Ok(resp.output)
 }
+
+// ========================================================
+// 6. 해외지수 분봉 조회
+// ========================================================
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasIndexMinuteQuery<'a> {
+    #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
+    pub market_div_code: &'a str, // N: 해외지수, X: 환율, KX: 원화환율
+    #[serde(rename = "FID_INPUT_ISCD")]
+    pub symbol: &'a str, // 종목번호 (ex. TSLA)
+    #[serde(rename = "FID_HOUR_CLS_CODE")]
+    pub hour_cls_code: &'a str, // 0: 정규장, 1: 시간외
+    #[serde(rename = "FID_PW_DATA_INCU_YN")]
+    pub include_past: &'a str, // Y/N
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasIndexMinuteOutput1 {
+    pub ovrs_nmix_prdy_vrss: String,
+    pub prdy_vrss_sign: String,
+    pub hts_kor_isnm: String,
+    pub prdy_ctrt: String,
+    pub ovrs_nmix_prdy_clpr: String,
+    pub acml_vol: String,
+    pub ovrs_nmix_prpr: String,
+    pub stck_shrn_iscd: String,
+    pub ovrs_prod_oprc: String,
+    pub ovrs_prod_hgpr: String,
+    pub ovrs_prod_lwpr: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasIndexMinuteOutput2 {
+    pub stck_bsop_date: String,
+    pub stck_cntg_hour: String,
+    pub optn_prpr: String,
+    pub optn_oprc: String,
+    pub optn_hgpr: String,
+    pub optn_lwpr: String,
+    pub cntg_vol: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasIndexMinuteResponse {
+    pub rt_cd: String,
+    pub msg_cd: String,
+    pub msg1: String,
+    pub output1: OverseasIndexMinuteOutput1,
+    pub output2: Vec<OverseasIndexMinuteOutput2>,
+}
+
+pub async fn get_overseas_index_minutes(
+    oauth: &Oauth,
+    header: &ApiHeader<'_>,
+    q: OverseasIndexMinuteQuery<'_>,
+) -> Result<(OverseasIndexMinuteOutput1, Vec<OverseasIndexMinuteOutput2>), Box<dyn Error>> {
+    let url =
+        "https://openapi.koreainvestment.com:9443/uapi/overseas-price/v1/quotations/inquire-time-indexchartprice";
+
+    let resp: OverseasIndexMinuteResponse = call_api(
+        oauth,
+        header,
+        url,
+        "FHKST03030200",
+        &[
+            ("FID_COND_MRKT_DIV_CODE", q.market_div_code),
+            ("FID_INPUT_ISCD", q.symbol),
+            ("FID_HOUR_CLS_CODE", q.hour_cls_code),
+            ("FID_PW_DATA_INCU_YN", q.include_past),
+        ],
+    )
+    .await?;
+
+    if resp.rt_cd != "0" {
+        return Err(format!("API 오류: {} ({})", resp.msg1, resp.msg_cd).into());
+    }
+    Ok((resp.output1, resp.output2))
+}
