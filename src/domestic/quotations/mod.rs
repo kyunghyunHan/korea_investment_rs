@@ -16,6 +16,11 @@ pub trait Domestic {
         &self,
         stock_code: &str,
     ) -> Result<StockPrice2Output, Box<dyn Error>>;
+    async fn get_inquire_index_price(
+        &self,
+        market_div_code: &str,
+        index_code: &str,
+    ) -> Result<IndexPriceOutput, Box<dyn Error>>;
     async fn get_inquire_period_price(
         &self,
         stock_code: &str,
@@ -100,6 +105,63 @@ pub struct StockPrice2Response {
     pub msg_cd: String,
     pub msg1: String,
     pub output: StockPrice2Output,
+}
+
+// 업종 현재지수 응답
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndexPriceQuery<'a> {
+    #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
+    pub fid_cond_mrkt_div_code: &'a str, // 업종(U)
+    #[serde(rename = "FID_INPUT_ISCD")]
+    pub fid_input_iscd: &'a str, // 코스피(0001), 코스닥(1001), 코스피200(2001) ...
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndexPriceOutput {
+    pub bstp_nmix_prpr: String,
+    pub bstp_nmix_prdy_vrss: String,
+    pub prdy_vrss_sign: String,
+    pub bstp_nmix_prdy_ctrt: String,
+    pub acml_vol: String,
+    pub prdy_vol: String,
+    pub acml_tr_pbmn: String,
+    pub prdy_tr_pbmn: String,
+    pub bstp_nmix_oprc: String,
+    pub prdy_nmix_vrss_nmix_oprc: String,
+    pub oprc_vrss_prpr_sign: String,
+    pub bstp_nmix_oprc_prdy_ctrt: String,
+    pub bstp_nmix_hgpr: String,
+    pub prdy_nmix_vrss_nmix_hgpr: String,
+    pub hgpr_vrss_prpr_sign: String,
+    pub bstp_nmix_hgpr_prdy_ctrt: String,
+    pub bstp_nmix_lwpr: String,
+    pub prdy_clpr_vrss_lwpr: String,
+    pub lwpr_vrss_prpr_sign: String,
+    pub prdy_clpr_vrss_lwpr_rate: String,
+    pub ascn_issu_cnt: String,
+    pub uplm_issu_cnt: String,
+    pub stnr_issu_cnt: String,
+    pub down_issu_cnt: String,
+    pub lslm_issu_cnt: String,
+    pub dryy_bstp_nmix_hgpr: String,
+    pub dryy_hgpr_vrss_prpr_rate: String,
+    pub dryy_bstp_nmix_hgpr_date: String,
+    pub dryy_bstp_nmix_lwpr: String,
+    pub dryy_lwpr_vrss_prpr_rate: String,
+    pub dryy_bstp_nmix_lwpr_date: String,
+    pub total_askp_rsqn: String,
+    pub total_bidp_rsqn: String,
+    pub seln_rsqn_rate: String,
+    pub shnu_rsqn_rate: String,
+    pub ntby_rsqn: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndexPriceResponse {
+    pub rt_cd: String,
+    pub msg_cd: String,
+    pub msg1: String,
+    pub output: IndexPriceOutput,
 }
 
 // 기간별 조회
@@ -245,6 +307,36 @@ impl Domestic for KISProvider {
             &[
                 ("FID_COND_MRKT_DIV_CODE", query.market_division_code),
                 ("FID_INPUT_ISCD", query.stock_code),
+            ],
+        )
+        .await?;
+
+        if response.rt_cd != "0" {
+            return Err(format!("API 오류: {} ({})", response.msg1, response.msg_cd).into());
+        }
+        Ok(response.output)
+    }
+
+    async fn get_inquire_index_price(
+        &self,
+        market_div_code: &str,
+        index_code: &str,
+    ) -> Result<IndexPriceOutput, Box<dyn Error>> {
+        let query = IndexPriceQuery {
+            fid_cond_mrkt_div_code: market_div_code,
+            fid_input_iscd: index_code,
+        };
+        let url =
+            "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-index-price";
+
+        let response: IndexPriceResponse = call_api(
+            &self.oauth,
+            &self.header,
+            url,
+            "FHPUP02100000",
+            &[
+                ("FID_COND_MRKT_DIV_CODE", query.fid_cond_mrkt_div_code),
+                ("FID_INPUT_ISCD", query.fid_input_iscd),
             ],
         )
         .await?;
