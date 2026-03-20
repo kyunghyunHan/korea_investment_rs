@@ -261,6 +261,94 @@ pub async fn get_overseas_daily_chartprice(
 // 4. 해외주식 기간별 시세 (일/주/월)
 // ========================================================
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasDailyPriceQuery<'a> {
+    #[serde(rename = "AUTH")]
+    pub auth: &'a str, // "" (Null)
+    #[serde(rename = "EXCD")]
+    pub exchg_code: &'a str, // NAS, NYS, AMS, HKS ...
+    #[serde(rename = "SYMB")]
+    pub symbol: &'a str, // 종목코드 (ex. TSLA)
+    #[serde(rename = "GUBN")]
+    pub gubn: &'a str, // 0:일, 1:주, 2:월
+    #[serde(rename = "BYMD")]
+    pub bymd: &'a str, // 조회기준일자 (YYYYMMDD)
+    #[serde(rename = "MODP")]
+    pub modp: &'a str, // 0: 미반영, 1: 반영
+    #[serde(rename = "KEYB")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keyb: Option<&'a str>, // NEXT KEY BUFF
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasDailyPriceOutput1 {
+    pub rsym: String,
+    pub zdiv: String,
+    pub nrec: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasDailyPriceOutput2 {
+    pub xymd: String,
+    pub clos: String,
+    pub sign: String,
+    pub diff: String,
+    pub rate: String,
+    pub open: String,
+    pub high: String,
+    pub low: String,
+    pub tvol: String,
+    pub tamt: String,
+    pub pbid: String,
+    pub vbid: String,
+    pub pask: String,
+    pub vask: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasDailyPriceResponse {
+    pub rt_cd: String,
+    pub msg_cd: String,
+    pub msg1: String,
+    pub output1: OverseasDailyPriceOutput1,
+    pub output2: Vec<OverseasDailyPriceOutput2>,
+}
+
+pub async fn get_overseas_daily_price(
+    oauth: &Oauth,
+    header: &ApiHeader<'_>,
+    q: OverseasDailyPriceQuery<'_>,
+) -> Result<(OverseasDailyPriceOutput1, Vec<OverseasDailyPriceOutput2>), Box<dyn Error>> {
+    let url =
+        "https://openapi.koreainvestment.com:9443/uapi/overseas-price/v1/quotations/dailyprice";
+
+    let mut params = vec![
+        ("AUTH", q.auth),
+        ("EXCD", q.exchg_code),
+        ("SYMB", q.symbol),
+        ("GUBN", q.gubn),
+        ("BYMD", q.bymd),
+        ("MODP", q.modp),
+    ];
+    if let Some(keyb) = q.keyb {
+        params.push(("KEYB", keyb));
+    }
+
+    let resp: OverseasDailyPriceResponse = call_api(
+        oauth,
+        header,
+        url,
+        "HHDFS76240000",
+        &params,
+    )
+    .await?;
+
+    if resp.rt_cd != "0" {
+        return Err(format!("API 오류: {} ({})", resp.msg1, resp.msg_cd).into());
+    }
+    Ok((resp.output1, resp.output2))
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverseasPeriodQuery<'a> {
     #[serde(rename = "AUTH")]
     pub auth: &'a str,
