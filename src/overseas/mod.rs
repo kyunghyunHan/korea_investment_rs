@@ -176,7 +176,89 @@ pub async fn get_overseas_product_info(
 }
 
 // ========================================================
-// 3. 해외주식 기간별 시세 (일/주/월)
+// 3. 해외주식 종목/지수/환율기간별시세 (일/주/월/년)
+// ========================================================
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasDailyChartQuery<'a> {
+    #[serde(rename = "FID_COND_MRKT_DIV_CODE")]
+    pub market_div_code: &'a str, // N: 해외지수, X: 환율, I: 국채, S: 금선물
+    #[serde(rename = "FID_INPUT_ISCD")]
+    pub symbol: &'a str, // 종목코드
+    #[serde(rename = "FID_INPUT_DATE_1")]
+    pub start_date: &'a str, // 시작일자 (YYYYMMDD)
+    #[serde(rename = "FID_INPUT_DATE_2")]
+    pub end_date: &'a str, // 종료일자 (YYYYMMDD)
+    #[serde(rename = "FID_PERIOD_DIV_CODE")]
+    pub period_div_code: &'a str, // D:일, W:주, M:월, Y:년
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasDailyChartOutput1 {
+    pub ovrs_nmix_prdy_vrss: String,
+    pub prdy_vrss_sign: String,
+    pub prdy_ctrt: String,
+    pub ovrs_nmix_prdy_clpr: String,
+    pub acml_vol: String,
+    pub hts_kor_isnm: String,
+    pub ovrs_nmix_prpr: String,
+    pub stck_shrn_iscd: String,
+    pub prdy_vol: String,
+    pub ovrs_prod_oprc: String,
+    pub ovrs_prod_hgpr: String,
+    pub ovrs_prod_lwpr: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasDailyChartOutput2 {
+    pub stck_bsop_date: String,
+    pub ovrs_nmix_prpr: String,
+    pub ovrs_nmix_oprc: String,
+    pub ovrs_nmix_hgpr: String,
+    pub ovrs_nmix_lwpr: String,
+    pub acml_vol: String,
+    pub mod_yn: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverseasDailyChartResponse {
+    pub rt_cd: String,
+    pub msg_cd: String,
+    pub msg1: String,
+    pub output1: OverseasDailyChartOutput1,
+    pub output2: Vec<OverseasDailyChartOutput2>,
+}
+
+pub async fn get_overseas_daily_chartprice(
+    oauth: &Oauth,
+    header: &ApiHeader<'_>,
+    q: OverseasDailyChartQuery<'_>,
+) -> Result<(OverseasDailyChartOutput1, Vec<OverseasDailyChartOutput2>), Box<dyn Error>> {
+    let url =
+        "https://openapi.koreainvestment.com:9443/uapi/overseas-price/v1/quotations/inquire-daily-chartprice";
+
+    let resp: OverseasDailyChartResponse = call_api(
+        oauth,
+        header,
+        url,
+        "FHKST03030100",
+        &[
+            ("FID_COND_MRKT_DIV_CODE", q.market_div_code),
+            ("FID_INPUT_ISCD", q.symbol),
+            ("FID_INPUT_DATE_1", q.start_date),
+            ("FID_INPUT_DATE_2", q.end_date),
+            ("FID_PERIOD_DIV_CODE", q.period_div_code),
+        ],
+    )
+    .await?;
+
+    if resp.rt_cd != "0" {
+        return Err(format!("API 오류: {} ({})", resp.msg1, resp.msg_cd).into());
+    }
+    Ok((resp.output1, resp.output2))
+}
+
+// ========================================================
+// 4. 해외주식 기간별 시세 (일/주/월)
 // ========================================================
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverseasPeriodQuery<'a> {
@@ -243,7 +325,7 @@ pub async fn get_overseas_period_price(
 }
 
 // ========================================================
-// 4. 해외주식 당일분봉 조회
+// 5. 해외주식 당일분봉 조회
 // ========================================================
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverseasTodayMinuteQuery<'a> {
@@ -304,7 +386,7 @@ pub async fn get_overseas_today_minutes(
 }
 
 // ========================================================
-// 5. 해외주식 특정일 분봉 조회
+// 6. 해외주식 특정일 분봉 조회
 // ========================================================
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverseasByDayMinuteQuery<'a> {
@@ -368,7 +450,7 @@ pub async fn get_overseas_minutes_by_day(
 }
 
 // ========================================================
-// 6. 해외지수 분봉 조회
+// 7. 해외지수 분봉 조회
 // ========================================================
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverseasIndexMinuteQuery<'a> {
