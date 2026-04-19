@@ -1,7 +1,5 @@
-use crate::oauth::Oauth;
 use crate::provider::KISProvider;
-use crate::types::CustType;
-use crate::utils::{ApiHeader, call_api};
+use crate::utils::{ApiEndpoint, ApiResponse, RawApiBody, TrId, call_api, call_get_api};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use async_trait::async_trait;
@@ -40,6 +38,22 @@ pub trait Domestic {
         date: &str,
         interval: &str,
     ) -> Result<Vec<ByDayMinuteCandle>, Box<dyn Error>>;
+}
+
+#[async_trait]
+pub trait DomesticExtendedQuotations {
+    async fn get_orderbook(
+        &self,
+        stock_code: &str,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>>;
+    async fn get_investor_trend(
+        &self,
+        stock_code: &str,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>>;
+    async fn get_member_trend(
+        &self,
+        stock_code: &str,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>>;
 }
 
 // ======================================================
@@ -460,5 +474,78 @@ impl Domestic for KISProvider {
             return Err(format!("API 오류: {} ({})", response.msg1, response.msg_cd).into());
         }
         Ok(response.output)
+    }
+}
+
+const ORDERBOOK_ENDPOINT: ApiEndpoint = ApiEndpoint::new(
+    "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn",
+    TrId::new("FHKST01010200", Some("FHKST01010200")),
+);
+const INVESTOR_ENDPOINT: ApiEndpoint = ApiEndpoint::new(
+    "/uapi/domestic-stock/v1/quotations/inquire-investor",
+    TrId::new("FHKST01010900", Some("FHKST01010900")),
+);
+const MEMBER_ENDPOINT: ApiEndpoint = ApiEndpoint::new(
+    "/uapi/domestic-stock/v1/quotations/inquire-member",
+    TrId::new("FHKST01010600", Some("FHKST01010600")),
+);
+
+#[async_trait]
+impl DomesticExtendedQuotations for KISProvider {
+    async fn get_orderbook(
+        &self,
+        stock_code: &str,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>> {
+        let response = call_get_api::<RawApiBody>(
+            &self.oauth,
+            &self.header,
+            self.practice,
+            ORDERBOOK_ENDPOINT,
+            &[
+                ("FID_COND_MRKT_DIV_CODE", "J"),
+                ("FID_INPUT_ISCD", stock_code),
+            ],
+        )
+        .await?;
+        response.body.ensure_success()?;
+        Ok(response)
+    }
+
+    async fn get_investor_trend(
+        &self,
+        stock_code: &str,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>> {
+        let response = call_get_api::<RawApiBody>(
+            &self.oauth,
+            &self.header,
+            self.practice,
+            INVESTOR_ENDPOINT,
+            &[
+                ("FID_COND_MRKT_DIV_CODE", "J"),
+                ("FID_INPUT_ISCD", stock_code),
+            ],
+        )
+        .await?;
+        response.body.ensure_success()?;
+        Ok(response)
+    }
+
+    async fn get_member_trend(
+        &self,
+        stock_code: &str,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>> {
+        let response = call_get_api::<RawApiBody>(
+            &self.oauth,
+            &self.header,
+            self.practice,
+            MEMBER_ENDPOINT,
+            &[
+                ("FID_COND_MRKT_DIV_CODE", "J"),
+                ("FID_INPUT_ISCD", stock_code),
+            ],
+        )
+        .await?;
+        response.body.ensure_success()?;
+        Ok(response)
     }
 }

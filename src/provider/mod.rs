@@ -1,7 +1,6 @@
-use crate::domestic;
 use crate::oauth::Oauth;
 use crate::types::{CustType, MarketType};
-use crate::utils::{ApiHeader, call_api};
+use crate::utils::ApiHeader;
 use std::error::Error;
 /// 국내 / 해외 시장 구분
 
@@ -26,5 +25,8 @@ impl KISProvider {
             market,
         })
     }
-    
+
+    pub fn transport_header(&self) -> &ApiHeader<'static> {
+        &self.header
+    }
 }

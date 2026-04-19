@@ -1,5 +1,5 @@
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::json;
 use std::error::Error;
 #[derive(Deserialize, Debug)]

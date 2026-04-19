@@ -1,178 +1,287 @@
-# Korea Investment API Client for Rust
+# korea_investment_rs
 
-`korea_investment_rs`는 한국투자증권의 Open Trading API를 쉽게 사용할 수 있게 해주는 Rust 라이브러리입니다. REST API와 WebSocket을 통해 국내/해외 주식 시세 조회 및 실시간 데이터 수신, 주문 등 다양한 기능을 제공합니다.
+한국투자증권 Open API용 Rust 라이브러리입니다. 현재는 전체 API를 전부 커버하지는 않지만, 공통 transport 레이어와 주요 국내/해외 주식 API를 중심으로 확장 가능한 형태로 정리되어 있습니다.
 
-## 주요 기능
-
-- ✅ **국내주식** 시세 조회 및 주문
-- ✅ **해외주식** 시세 조회 및 실시간 데이터
-- ✅ WebSocket을 통한 실시간 시세 구독
-- ✅ OAuth 인증을 통한 간편한 API 접근
-
-## 빠른 시작
-
-### 설치
-
-`Cargo.toml`에 다음 의존성을 추가하세요:
+## 설치
 
 ```toml
 [dependencies]
-korea_investment_rs = "0.1.0"
+korea_investment_rs = "0.2.1"
 tokio = { version = "1", features = ["full"] }
 ```
 
-### 인증 설정
+## 환경 변수
 
-API 사용을 위해 발급받은 앱 키와 시크릿 키를 설정하세요:
+인증:
 
-```rust
-use korea_investment_rs::auth::Auth;
+- `PUB_KEY`
+- `SCREST_KEY`
 
-async fn main() {
-    let auth = Auth::new("YOUR_APP_KEY", "YOUR_APP_SECRET").await.unwrap();
-    println!("발급된 토큰: {}", auth.access_token);
-}
-```
+계좌 예제:
 
-### 예제: 일별 시세 조회
+- `KIS_CANO`
+- `KIS_ACNT_PRDT_CD`
 
-```rust
-use korea_investment_rs::domestic::quotations::InquireDailyItemChartPrice;
+`examples` 실행 시에는 `--features ex` 옵션을 사용하면 `.env`를 읽습니다.
 
-#[tokio::main]
-async fn main() {
-    // 환경 변수에서 API 키 로드
-    dotenv::dotenv().ok();
-    let app_key = std::env::var("APP_KEY").expect("APP_KEY not set");
-    let app_secret = std::env::var("APP_SECRET").expect("APP_SECRET not set");
-    
-    // 인증 및 API 객체 생성
-    let auth = Auth::new(app_key, app_secret).await.unwrap();
-    
-    // 삼성전자(005930) 일별 시세 조회
-    let params = InquireDailyItemChartPrice::new("J", "1", "005930");
-    let response = params.send(&auth).await.unwrap();
-    
-    println!("조회 결과: {:?}", response);
-}
-```
+## 현재 구조
 
-## 사용 가능한 API 목록
+- 공통 transport
+  - `GET` / `POST`
+  - hashkey 생성
+  - 실전/모의 `TR_ID` 분기
+  - `tr_cont` 헤더 및 연속조회 응답 헤더 수집
+- 국내주식
+  - 시세 기본 조회
+  - 주문/계좌 핵심 API
+- 해외주식
+  - 시세 기본 조회
+  - 주문/계좌 핵심 API
+- 국내선물옵션
+  - 주문가능 조회 1종
+- 장내채권
+  - 잔고조회 / 현재가 조회
 
-### 국내주식
+## 사용 예시
 
-- `/uapi/domestic-stock/v1/quotations/inquire-price`: 현재가 시세 조회
-- `/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice`: 일별 시세 조회
-- `/uapi/domestic-stock/v1/quotations/inquire-elw-price`: ELW 시세 조회
-
-### 해외주식
-
-- WebSocket을 통한 해외주식 실시간 시세 (`HDFSCNT0`)
-- 해외주식 현재가 및 호가 조회 
-
-## 실행 예제
-
-라이브러리에 포함된 예제 코드를 실행하려면:
+국내 잔고 조회:
 
 ```bash
-# 일별 시세 조회 예제 실행
-cargo run --example get_inquire_daily_itemchartprice --features ex
-
-# 실시간 시세 구독 예제 실행
-cargo run --example overseas_realtime_websocket --features ex
+cargo run --example get_balance --features ex
 ```
 
-## OAuth 토큰 및 WebSocket 접속키 발급
+국내 호가 조회:
 
-```rust
-use korea_investment_rs::websocket::oauth::ApproveOauth;
-
-async fn get_approval_key() {
-    let app_key = std::env::var("APP_KEY").expect("APP_KEY not set");
-    let app_secret = std::env::var("APP_SECRET").expect("APP_SECRET not set");
-    
-    let oauth = ApproveOauth::new(app_key, app_secret).await.unwrap();
-    println!("WebSocket 접속키: {}", oauth.approval_key);
-}
+```bash
+cargo run --example get_orderbook --features ex
 ```
 
-## 주의사항
+해외 잔고 조회:
 
-- API를 사용하기 위해서는 한국투자증권의 Open API 서비스 신청이 필요합니다.
-- 실제 환경에서 사용하기 전에 모의투자 환경에서 충분히 테스트하세요.
-- 여러 API 호출 시 초당 요청 제한을 고려하세요.
+```bash
+cargo run --example get_overseas_balance --features ex
+```
 
-## 라이선스
+해외 호가 조회:
 
-MIT License
+```bash
+cargo run --example get_overseas_asking_price --features ex
+```
 
----
+선물옵션 주문가능 조회:
 
+```bash
+cargo run --example get_future_possible_order --features ex
+```
 
-## Example
-- 해외주식 상품기본정보: `cargo run --example get_overseas_product_info --features ex`
+채권 현재가 조회:
 
+```bash
+cargo run --example get_bond_price --features ex
+```
 
-## Korea Investment RS API 구현 현황
+## 구현 현황
 
----
+엑셀 원본 기준 전체 API는 338개입니다.
 
-### 1. Oauth
-- ✅ 토큰 발급 [`Oauth::from_env`, `Oauth::from_env_with_cache`]
+- REST 278
+- WebSocket 60
 
----
+### 1. 공통 transport
 
-### 2. Domestic (국내시장)
+구현됨:
 
-#### 1) 현재가/시세
-- ✅ 주식현재가 시세 [`get_inquire_price`]
-- ✅ 주식현재가 시세2 [`get_inquire_price2`]
-- ✅ 주식현재가 체결 [`get_recent_ticks`]
-- ❌ <span style="color:red">주식현재가 일자별</span>
-- ❌ <span style="color:red">주식현재가 호가/예상체결</span>
-- ❌ <span style="color:red">주식현재가 투자자</span>
-- ❌ <span style="color:red">주식현재가 회원사</span>
+- `GET` 요청 공통 처리
+- `POST` 요청 공통 처리
+- hashkey 생성
+- 실전/모의 도메인 분기
+- 실전/모의 `TR_ID` 분기
+- `tr_cont` 응답 헤더 수집
+- raw 응답 보존 구조 (`RawApiBody`)
 
-#### 2) 차트/기간별
-- ✅ 국내주식기간별시세(일/주/월/년) [`get_inquire_period_price`]
-- ✅ 주식당일분봉조회 [`get_today_minutes`]
-- ✅ 주식일별분봉조회 [`get_minutes_by_day`]
+미구현:
 
-#### 3) 시간외
-- ❌ <span style="color:red">주식현재가 당일시간대별체결</span>
-- ❌ <span style="color:red">주식현재가 시간외일자별주가</span>
-- ❌ <span style="color:red">주식현재가 시간외시간별체결</span>
-- ❌ <span style="color:red">국내주식 시간외현재가</span>
-- ❌ <span style="color:red">국내주식 시간외호가</span>
-- ❌ <span style="color:red">국내주식 장마감 예상체결가</span>
+- 연속조회 자동 반복 수집기
+- 시트 기반 코드 생성
+- 공통 오류 코드 매핑
 
-#### 4) ETF / ETN
-- ❌ <span style="color:red">ETF/ETN 현재가</span>
-- ❌ <span style="color:red">ETF 구성종목시세</span>
-- ❌ <span style="color:red">NAV 비교추이(종목)</span>
-- ❌ <span style="color:red">NAV 비교추이(일)</span>
-- ❌ <span style="color:red">NAV 비교추이(분)</span>
+### 2. 국내주식 시세
 
----
+구현됨:
 
-### 3. Overseas (해외시장)
-- ✅ 해외주식 현재가 [`get_overseas_price`]
-- ✅ 해외주식 상품기본정보 [`get_overseas_product_info`]
-- ❌ <span style="color:red">해외주식 기간별 시세</span>
-- ❌ <span style="color:red">해외주식 일자별/분봉별 시세</span>
+- `get_inquire_price`
+- `get_inquire_price2`
+- `get_inquire_index_price`
+- `get_inquire_period_price`
+- `get_recent_ticks`
+- `get_today_minutes`
+- `get_minutes_by_day`
+- `get_orderbook`
+- `get_investor_trend`
+- `get_member_trend`
 
----
+미구현:
 
-### 4. Socket
+- 시간외 현재가/호가 계열 추가 확장
+- ETF/ETN/NAV 계열
+- 순위분석 대다수
+- 조건검색 계열
 
-#### 1) 해외주식 실시간지연체결가 [실시간-007]
-- ❌ <span style="color:red">미구현</span>
+### 3. 국내주식 주문/계좌
 
-#### 2) 해외주식 실시간지연호가(아시아) [실시간-008]
-- ❌ <span style="color:red">미구현</span>
+구현됨:
 
-#### 3) 해외주식 실시간체결통보 [실시간-009]
-- ❌ <span style="color:red">미구현</span>
+- 현금 매수 주문
+- 현금 매도 주문
+- 정정/취소 주문
+- 예약주문
+- 예약주문 조회
+- 예약주문 정정/취소
+- 잔고 조회
+- 실현손익 잔고 조회
+- 매수가능 조회
+- 일별 주문체결 조회
+- 정정취소 가능주문 조회
+- 기간별 매매손익 현황 조회
+- 기간별 손익 일별합산 조회
+- 퇴직연금 잔고조회
+- 퇴직연금 예수금조회
+- 퇴직연금 매수가능조회
+- 퇴직연금 미체결내역
+- 퇴직연금 체결기준잔고
 
-#### 4) 해외주식 실시간호가(미국) [실시간-021]
-- ❌ <span style="color:red">미구현</span>
+미구현:
+
+- 신용주문
+- 손익/권리/통합증거금 계열
+
+### 4. 해외주식 시세
+
+구현됨:
+
+- `get_overseas_price`
+- `get_overseas_product_info`
+- `get_overseas_daily_chartprice`
+- `get_overseas_daily_price`
+- `get_overseas_period_price`
+- `get_overseas_today_minutes`
+- `get_overseas_minutes_by_day`
+- `get_overseas_index_minutes`
+- `get_overseas_asking_price`
+- `get_overseas_multi_price`
+
+미구현:
+
+- 해외주식 순위분석 다수
+- 뉴스/속보/권리 종합
+- 업종별 분석 계열 일부
+
+### 5. 해외주식 주문/계좌
+
+구현됨:
+
+- 해외주식 매수 주문
+- 해외주식 매도 주문
+- 해외주식 정정/취소 주문
+- 해외주식 미국주간 매수/매도 주문
+- 해외주식 미국주간 정정/취소
+- 해외주식 예약주문 접수
+- 해외주식 예약주문 조회
+- 해외주식 예약주문 접수취소
+- 해외주식 잔고 조회
+- 해외주식 체결기준현재잔고 조회
+- 해외주식 결제기준잔고 조회
+- 해외주식 주문체결 내역 조회
+- 해외주식 매수가능금액 조회
+- 해외주식 기간손익 조회
+- 해외주식 미체결내역 조회
+- 해외주식 일별거래내역 조회
+
+미구현:
+
+- 체결기준현재잔고 / 결제기준잔고 / 기간손익 등 일부
+
+### 6. 국내선물옵션
+
+구현됨:
+
+- 선물옵션 주문가능 조회
+
+미구현:
+
+- 주문/정정취소
+- 잔고/손익
+- 시세/분봉
+- 실시간 피드
+
+### 7. 장내채권
+
+구현됨:
+
+- 장내채권 잔고조회
+- 장내채권 현재가(시세)
+
+미구현:
+
+- 매수/매도/정정취소 주문
+- 체결/일별/기간별 시세
+- 평균단가/발행정보/기본조회 추가 타입화
+
+### 8. WebSocket
+
+구현됨:
+
+- 해외 실시간지연체결가
+- 해외 실시간지연호가(아시아)
+- 해외 실시간체결통보
+- 해외 실시간호가(미국)
+- 기존 국내/해외 실시간 클라이언트 구조
+- 국내 실시간 raw 구독 클라이언트 정리
+- 국내 주요 TR 코드 enum 정리
+
+미구현 또는 정리 필요:
+
+- 국내 실시간 typed 모델
+- 선물옵션/채권 실시간 계열
+- 누락된 feed별 typed wrapper 보강
+
+## 예제 목록
+
+기존 예제:
+
+- `get_inquire_period_price`
+- `get_inquire_index_price`
+- `get_inquire_daily_itemchartprice`
+- `get_overseas_price`
+- `get_overseas_daily_chartprice`
+- `get_overseas_index_minutes`
+
+이번에 추가된 예제:
+
+- `get_balance`
+- `get_balance_realized_pl`
+- `get_orderbook`
+- `get_pension_balance`
+- `get_period_trade_profit`
+- `get_reserve_orders`
+- `get_overseas_balance`
+- `get_overseas_asking_price`
+- `get_overseas_present_balance`
+- `get_overseas_period_profit`
+- `get_overseas_reserve_orders`
+- `place_overseas_daytime_order`
+- `get_future_possible_order`
+- `get_bond_price`
+- `domestic_raw_realtime`
+
+## 인벤토리 추출
+
+엑셀 `API 목록` 시트를 그대로 읽어 요약하려면:
+
+```bash
+python3 scripts/extract_kis_api_inventory.py \
+  /Users/hangyeonghyeon/Downloads/한국투자증권_오픈API_전체문서_20260419_030008.xlsx \
+  --format markdown
+```
+
+세부 로드맵은 [docs/api-roadmap.md](docs/api-roadmap.md)에 정리되어 있습니다.

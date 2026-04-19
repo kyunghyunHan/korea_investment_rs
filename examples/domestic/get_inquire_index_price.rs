@@ -12,7 +12,7 @@ async fn main() {
     dotenv().ok();
 
     // ⚠ 모의투자 미지원 API
-    let practice = false;
+    let practice = true;
 
     let provider = KISProvider::new(MarketType::Domestic, practice)
         .await

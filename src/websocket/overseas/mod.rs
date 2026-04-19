@@ -49,8 +49,6 @@ impl From<reqwest::Error> for OverseasRealtimeError {
 }
 /// 해외 실시간 데이터 클라이언트
 pub struct OverseasRealtimeClient {
-    app_key: String,
-    app_secret: String,
     approval_key: String,
     cust_type: CustType,
 }
@@ -79,8 +77,6 @@ impl OverseasRealtimeClient {
 
         let approval_response: TokenResponse = response.json().await?;
         Ok(Self {
-            app_key,
-            app_secret,
             approval_key: (approval_response.approval_key),
             cust_type,
         })
@@ -114,8 +110,6 @@ impl OverseasRealtimeClient {
 
         let approval_response: TokenResponse = response.json().await?;
         Ok(Self {
-            app_key,
-            app_secret,
             approval_key: (approval_response.approval_key),
             cust_type,
         })
@@ -171,20 +165,8 @@ impl OverseasRealtimeClient {
 
         // 수신 작업 시작
         tokio::spawn(async move {
-            let mut is_running = true;
-
             while let Some(message) = read.next().await {
-                // 제어 메시지 확인
-                if let Ok(control_msg) = rx.try_recv() {
-                    match control_msg {
-                        ControlMessage::Stop => {
-                            is_running = false;
-                            break;
-                        }
-                    }
-                }
-
-                if !is_running {
+                if let Ok(ControlMessage::Stop) = rx.try_recv() {
                     break;
                 }
 
