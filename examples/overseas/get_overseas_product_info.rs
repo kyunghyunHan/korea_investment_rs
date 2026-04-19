@@ -2,8 +2,9 @@
 use dotenv::dotenv;
 use korea_investment_rs::{
     oauth::Oauth,
-    overseas::{ApiHeader, OverseasProductInfoQuery, get_overseas_product_info},
+    overseas::{OverseasProductInfoQuery, get_overseas_product_info},
     types::CustType,
+    utils::ApiHeader,
 };
 
 #[tokio::main]

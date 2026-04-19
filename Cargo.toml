@@ -1,6 +1,6 @@
 [package]
 name = "korea_investment_rs"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 description = "Korea Investment & Securities Open API"
 license = "MIT OR Apache-2.0"
@@ -33,3 +33,147 @@ path = "./examples/test.rs"
 [[example]]
 name = "get_inquire_period_price"
 path = "./examples/domestic/get_inquire_period_price.rs"
+
+[[example]]
+name = "get_inquire_index_price"
+path = "./examples/domestic/get_inquire_index_price.rs"
+
+[[example]]
+name = "get_inquire_daily_itemchartprice"
+path = "./examples/domestic/get_inquire_daily_itemchartprice.rs"
+
+[[example]]
+name = "get_inquire_price2"
+path = "./examples/domestic/get_inquire_price2.rs"
+
+[[example]]
+name = "get_stock_price"
+path = "./examples/domestic/get_stock_price.rs"
+
+[[example]]
+name = "get_balance"
+path = "./examples/domestic/get_balance.rs"
+
+[[example]]
+name = "get_balance_realized_pl"
+path = "./examples/domestic/get_balance_realized_pl.rs"
+
+[[example]]
+name = "get_condition_search_titles"
+path = "./examples/domestic/get_condition_search_titles.rs"
+
+[[example]]
+name = "get_credit_possible_order"
+path = "./examples/domestic/get_credit_possible_order.rs"
+
+[[example]]
+name = "get_domestic_volume_rank"
+path = "./examples/domestic/get_domestic_volume_rank.rs"
+
+[[example]]
+name = "get_integrated_margin"
+path = "./examples/domestic/get_integrated_margin.rs"
+
+[[example]]
+name = "get_orderbook"
+path = "./examples/domestic/get_orderbook.rs"
+
+[[example]]
+name = "get_pension_balance"
+path = "./examples/domestic/get_pension_balance.rs"
+
+[[example]]
+name = "get_period_rights"
+path = "./examples/domestic/get_period_rights.rs"
+
+[[example]]
+name = "get_period_trade_profit"
+path = "./examples/domestic/get_period_trade_profit.rs"
+
+[[example]]
+name = "get_reserve_orders"
+path = "./examples/domestic/get_reserve_orders.rs"
+
+[[example]]
+name = "get_bond_price"
+path = "./examples/bond/get_bond_price.rs"
+
+[[example]]
+name = "get_future_possible_order"
+path = "./examples/futures/get_future_possible_order.rs"
+
+[[example]]
+name = "create_token"
+path = "./examples/oauth/create_token.rs"
+
+[[example]]
+name = "get_overseas_asking_price"
+path = "./examples/overseas/get_overseas_asking_price.rs"
+
+[[example]]
+name = "get_overseas_balance"
+path = "./examples/overseas/get_overseas_balance.rs"
+
+[[example]]
+name = "get_overseas_daily_chartprice"
+path = "./examples/overseas/get_overseas_daily_chartprice.rs"
+
+[[example]]
+name = "get_overseas_index_minutes"
+path = "./examples/overseas/get_overseas_index_minutes.rs"
+
+[[example]]
+name = "get_overseas_news_title"
+path = "./examples/overseas/get_overseas_news_title.rs"
+
+[[example]]
+name = "get_overseas_period_profit"
+path = "./examples/overseas/get_overseas_period_profit.rs"
+
+[[example]]
+name = "get_overseas_present_balance"
+path = "./examples/overseas/get_overseas_present_balance.rs"
+
+[[example]]
+name = "get_overseas_price"
+path = "./examples/overseas/get_overseas_price.rs"
+
+[[example]]
+name = "get_overseas_product_info"
+path = "./examples/overseas/get_overseas_product_info.rs"
+
+[[example]]
+name = "get_overseas_reserve_orders"
+path = "./examples/overseas/get_overseas_reserve_orders.rs"
+
+[[example]]
+name = "get_overseas_trade_volume_rank"
+path = "./examples/overseas/get_overseas_trade_volume_rank.rs"
+
+[[example]]
+name = "place_overseas_daytime_order"
+path = "./examples/overseas/place_overseas_daytime_order.rs"
+
+[[example]]
+name = "create_provider"
+path = "./examples/provider/create_provider.rs"
+
+[[example]]
+name = "creat_approval_key"
+path = "./examples/socket/creat_approval_key.rs"
+
+[[example]]
+name = "domestic_raw_realtime"
+path = "./examples/socket/domestic_raw_realtime.rs"
+
+[[example]]
+name = "real_time_delayed_execution_price"
+path = "./examples/socket/real_time_delayed_execution_price.rs"
+
+[[example]]
+name = "test2"
+path = "./examples/test2.rs"
+
+[[example]]
+name = "test3"
+path = "./examples/test3.rs"

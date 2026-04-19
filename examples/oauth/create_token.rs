@@ -1,15 +1,16 @@
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
-use korea_investment_rs::oauth::{Oauth, OauthType};
-use std::env;
+use korea_investment_rs::{oauth::Oauth, types::CustType};
+
 #[tokio::main]
 async fn main() {
     #[cfg(feature = "ex")]
     dotenv().ok();
 
-    let app_key = env::var("PUB_KEY").expect("APP_KEY not set in .env file");
-    let app_secret = env::var("SCREST_KEY").expect("APP_SECRET not set in .env file");
-    let r#type = OauthType::PRACTICE;
-    let token = Oauth::new(app_key, app_secret, r#type).await.unwrap();
-    println!("{:?}", token);
+    let practice = true;
+    let token = Oauth::from_env_with_cache(CustType::P, practice)
+        .await
+        .expect("토큰 발급 실패");
+
+    println!("{:#?}", token);
 }

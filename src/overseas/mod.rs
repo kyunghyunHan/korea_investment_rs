@@ -934,6 +934,97 @@ pub enum OverseasReserveListMarket {
     Asia,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum OverseasAnalysisEndpoint {
+    ConditionSearch,
+    TradeGrowth,
+    PeriodRights,
+    PriceFluctuation,
+    TradeAmountRank,
+    VolumeSurge,
+    NewHighLow,
+    VolumePower,
+    TradeTurnover,
+    NewsTitle,
+    ColableByCompany,
+    MarketCap,
+    BreakingNewsTitle,
+    UpDownRate,
+    RightsByIce,
+    TradeVolume,
+}
+
+impl OverseasAnalysisEndpoint {
+    fn endpoint(self) -> ApiEndpoint {
+        match self {
+            Self::ConditionSearch => ApiEndpoint::new(
+                "/uapi/overseas-price/v1/quotations/inquire-search",
+                TrId::new("HHDFS76410000", Some("HHDFS76410000")),
+            ),
+            Self::TradeGrowth => ApiEndpoint::real_only(
+                "/uapi/overseas-stock/v1/ranking/trade-growth",
+                TrId::new("HHDFS76330000", None),
+            ),
+            Self::PeriodRights => ApiEndpoint::real_only(
+                "/uapi/overseas-price/v1/quotations/period-rights",
+                TrId::new("CTRGT011R", None),
+            ),
+            Self::PriceFluctuation => ApiEndpoint::real_only(
+                "/uapi/overseas-stock/v1/ranking/price-fluct",
+                TrId::new("HHDFS76260000", None),
+            ),
+            Self::TradeAmountRank => ApiEndpoint::real_only(
+                "/uapi/overseas-stock/v1/ranking/trade-pbmn",
+                TrId::new("HHDFS76320010", None),
+            ),
+            Self::VolumeSurge => ApiEndpoint::real_only(
+                "/uapi/overseas-stock/v1/ranking/volume-surge",
+                TrId::new("HHDFS76270000", None),
+            ),
+            Self::NewHighLow => ApiEndpoint::real_only(
+                "/uapi/overseas-stock/v1/ranking/new-highlow",
+                TrId::new("HHDFS76300000", None),
+            ),
+            Self::VolumePower => ApiEndpoint::real_only(
+                "/uapi/overseas-stock/v1/ranking/volume-power",
+                TrId::new("HHDFS76280000", None),
+            ),
+            Self::TradeTurnover => ApiEndpoint::real_only(
+                "/uapi/overseas-stock/v1/ranking/trade-turnover",
+                TrId::new("HHDFS76340000", None),
+            ),
+            Self::NewsTitle => ApiEndpoint::real_only(
+                "/uapi/overseas-price/v1/quotations/news-title",
+                TrId::new("HHPSTH60100C1", None),
+            ),
+            Self::ColableByCompany => ApiEndpoint::real_only(
+                "/uapi/overseas-price/v1/quotations/colable-by-company",
+                TrId::new("CTLN4050R", None),
+            ),
+            Self::MarketCap => ApiEndpoint::real_only(
+                "/uapi/overseas-stock/v1/ranking/market-cap",
+                TrId::new("HHDFS76350100", None),
+            ),
+            Self::BreakingNewsTitle => ApiEndpoint::real_only(
+                "/uapi/overseas-price/v1/quotations/brknews-title",
+                TrId::new("FHKST01011801", None),
+            ),
+            Self::UpDownRate => ApiEndpoint::real_only(
+                "/uapi/overseas-stock/v1/ranking/updown-rate",
+                TrId::new("HHDFS76290000", None),
+            ),
+            Self::RightsByIce => ApiEndpoint::real_only(
+                "/uapi/overseas-price/v1/quotations/rights-by-ice",
+                TrId::new("HHDFS78330900", None),
+            ),
+            Self::TradeVolume => ApiEndpoint::real_only(
+                "/uapi/overseas-stock/v1/ranking/trade-vol",
+                TrId::new("HHDFS76310010", None),
+            ),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct OverseasReserveOrderListRequest<'a> {
     pub account: &'a AccountInfo,
@@ -1043,6 +1134,15 @@ pub trait OverseasTrading {
     async fn get_overseas_multi_price(
         &self,
         request: OverseasMultiPriceRequest<'_>,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>>;
+}
+
+#[async_trait]
+pub trait OverseasAnalysis {
+    async fn get_overseas_analysis_raw(
+        &self,
+        endpoint: OverseasAnalysisEndpoint,
+        query: &[(&str, &str)],
     ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>>;
 }
 
@@ -1420,6 +1520,26 @@ impl OverseasTrading for KISProvider {
             self.practice,
             OVERSEAS_MULTI_PRICE_ENDPOINT,
             &refs,
+        )
+        .await?;
+        response.body.ensure_success()?;
+        Ok(response)
+    }
+}
+
+#[async_trait]
+impl OverseasAnalysis for KISProvider {
+    async fn get_overseas_analysis_raw(
+        &self,
+        endpoint: OverseasAnalysisEndpoint,
+        query: &[(&str, &str)],
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>> {
+        let response = call_get_api::<RawApiBody>(
+            &self.oauth,
+            &self.header,
+            self.practice,
+            endpoint.endpoint(),
+            query,
         )
         .await?;
         response.body.ensure_success()?;

@@ -88,6 +88,18 @@ const PENSION_PRESENT_BALANCE_ENDPOINT: ApiEndpoint = ApiEndpoint::real_only(
     "/uapi/domestic-stock/v1/trading/pension/inquire-present-balance",
     TrId::new("TTTC2202R", None),
 );
+const CREDIT_POSSIBLE_ORDER_ENDPOINT: ApiEndpoint = ApiEndpoint::real_only(
+    "/uapi/domestic-stock/v1/trading/inquire-credit-psamount",
+    TrId::new("TTTC8909R", None),
+);
+const INTEGRATED_MARGIN_ENDPOINT: ApiEndpoint = ApiEndpoint::real_only(
+    "/uapi/domestic-stock/v1/trading/intgr-margin",
+    TrId::new("TTTC0869R", None),
+);
+const PERIOD_RIGHTS_ENDPOINT: ApiEndpoint = ApiEndpoint::real_only(
+    "/uapi/domestic-stock/v1/trading/period-rights",
+    TrId::new("CTRGA011R", None),
+);
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DomesticCashOrderRequest<'a> {
@@ -351,6 +363,38 @@ pub struct PensionPresentBalanceRequest<'a> {
     pub continuation: Option<&'a ContinuationKey>,
 }
 
+#[derive(Debug, Clone)]
+pub struct DomesticCreditPossibleOrderRequest<'a> {
+    pub account: &'a AccountInfo,
+    pub pdno: &'a str,
+    pub ord_unpr: &'a str,
+    pub ord_dvsn: &'a str,
+    pub crdt_type: &'a str,
+    pub cma_evlu_amt_icld_yn: &'a str,
+    pub ovrs_icld_yn: &'a str,
+}
+
+#[derive(Debug, Clone)]
+pub struct DomesticIntegratedMarginRequest<'a> {
+    pub account: &'a AccountInfo,
+    pub cma_evlu_amt_icld_yn: &'a str,
+    pub wcrc_frcr_dvsn_cd: &'a str,
+    pub fwex_ctrt_frcr_dvsn_cd: &'a str,
+}
+
+#[derive(Debug, Clone)]
+pub struct DomesticPeriodRightsRequest<'a> {
+    pub account: &'a AccountInfo,
+    pub cust_rncno25: &'a str,
+    pub hmid: &'a str,
+    pub inqr_strt_dt: &'a str,
+    pub inqr_end_dt: &'a str,
+    pub rght_type_cd: &'a str,
+    pub pdno: &'a str,
+    pub prdt_type_cd: &'a str,
+    pub continuation: Option<&'a ContinuationKey>,
+}
+
 #[async_trait]
 pub trait DomesticTrading {
     async fn create_hashkey<T: Serialize + Send + Sync>(
@@ -432,6 +476,18 @@ pub trait DomesticTrading {
     async fn inquire_pension_present_balance(
         &self,
         request: PensionPresentBalanceRequest<'_>,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>>;
+    async fn inquire_credit_possible_order(
+        &self,
+        request: DomesticCreditPossibleOrderRequest<'_>,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>>;
+    async fn inquire_integrated_margin(
+        &self,
+        request: DomesticIntegratedMarginRequest<'_>,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>>;
+    async fn inquire_period_rights(
+        &self,
+        request: DomesticPeriodRightsRequest<'_>,
     ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>>;
 }
 
@@ -878,6 +934,86 @@ impl DomesticTrading for KISProvider {
                 ("CTX_AREA_FK100", &continuation.fk),
                 ("CTX_AREA_NK100", &continuation.nk),
                 ("PRCS_DVSN_CD", request.prcs_dvsn_cd),
+            ],
+        )
+        .await?;
+        response.body.ensure_success()?;
+        Ok(response)
+    }
+
+    async fn inquire_credit_possible_order(
+        &self,
+        request: DomesticCreditPossibleOrderRequest<'_>,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>> {
+        let response = call_get_api::<RawApiBody>(
+            &self.oauth,
+            &self.header,
+            self.practice,
+            CREDIT_POSSIBLE_ORDER_ENDPOINT,
+            &[
+                ("CANO", &request.account.cano),
+                ("ACNT_PRDT_CD", &request.account.acnt_prdt_cd),
+                ("PDNO", request.pdno),
+                ("ORD_UNPR", request.ord_unpr),
+                ("ORD_DVSN", request.ord_dvsn),
+                ("CRDT_TYPE", request.crdt_type),
+                ("CMA_EVLU_AMT_ICLD_YN", request.cma_evlu_amt_icld_yn),
+                ("OVRS_ICLD_YN", request.ovrs_icld_yn),
+            ],
+        )
+        .await?;
+        response.body.ensure_success()?;
+        Ok(response)
+    }
+
+    async fn inquire_integrated_margin(
+        &self,
+        request: DomesticIntegratedMarginRequest<'_>,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>> {
+        let response = call_get_api::<RawApiBody>(
+            &self.oauth,
+            &self.header,
+            self.practice,
+            INTEGRATED_MARGIN_ENDPOINT,
+            &[
+                ("CANO", &request.account.cano),
+                ("ACNT_PRDT_CD", &request.account.acnt_prdt_cd),
+                ("CMA_EVLU_AMT_ICLD_YN", request.cma_evlu_amt_icld_yn),
+                ("WCRC_FRCR_DVSN_CD", request.wcrc_frcr_dvsn_cd),
+                ("FWEX_CTRT_FRCR_DVSN_CD", request.fwex_ctrt_frcr_dvsn_cd),
+            ],
+        )
+        .await?;
+        response.body.ensure_success()?;
+        Ok(response)
+    }
+
+    async fn inquire_period_rights(
+        &self,
+        request: DomesticPeriodRightsRequest<'_>,
+    ) -> Result<ApiResponse<RawApiBody>, Box<dyn Error>> {
+        let continuation = request.continuation.cloned().unwrap_or_default();
+        let header = self
+            .header
+            .clone()
+            .with_tr_cont(request.continuation.map(|_| "N"));
+        let response = call_get_api::<RawApiBody>(
+            &self.oauth,
+            &header,
+            self.practice,
+            PERIOD_RIGHTS_ENDPOINT,
+            &[
+                ("CUST_RNCNO25", request.cust_rncno25),
+                ("HMID", request.hmid),
+                ("CANO", &request.account.cano),
+                ("ACNT_PRDT_CD", &request.account.acnt_prdt_cd),
+                ("INQR_STRT_DT", request.inqr_strt_dt),
+                ("INQR_END_DT", request.inqr_end_dt),
+                ("RGHT_TYPE_CD", request.rght_type_cd),
+                ("PDNO", request.pdno),
+                ("PRDT_TYPE_CD", request.prdt_type_cd),
+                ("CTX_AREA_NK100", &continuation.nk),
+                ("CTX_AREA_FK100", &continuation.fk),
             ],
         )
         .await?;

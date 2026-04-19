@@ -1,29 +1,24 @@
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
-use korea_investment_rs::{oauth::Oauth, provider::KISProvider, types::CustType, utils::ApiHeader};
+use korea_investment_rs::{
+    domestic::quotations::Domestic,
+    provider::KISProvider,
+    types::MarketType,
+};
 
 #[tokio::main]
 async fn main() {
     #[cfg(feature = "ex")]
     dotenv().ok();
 
-    let practice = true;
-
-    // 토큰 발급
-    let token = Oauth::from_env_with_cache(CustType::P, practice)
+    let provider = KISProvider::new(MarketType::Domestic, true)
         .await
-        .expect("토큰 발급 실패");
-    #[cfg(feature = "ex")]
-    // Provider 생성
-    let provider = KISProvider {
-        oauth: token,
-        header: ApiHeader::personal(),
-        market_type: korea_investment_rs::types::MarketType::Domestic, // 국내시장
-    };
-    #[cfg(feature = "ex")]
-    // 종목코드 005930 (삼성전자)
-    let result = provider.get_inquire_price("005930").await.unwrap();
-    #[cfg(feature = "ex")]
+        .expect("Provider 초기화 실패");
 
-    println!("{:#?}", result);
+    let result = provider
+        .get_inquire_period_price("005930", "20240101", "20241231", "D")
+        .await
+        .expect("조회 실패");
+
+    println!("{:#?}", result.output2);
 }

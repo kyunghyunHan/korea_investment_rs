@@ -1,7 +1,7 @@
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
 use korea_investment_rs::{
-    domestic::quotations::Domestic,
+    domestic::analysis::{DomesticAnalysis, DomesticAnalysisEndpoint},
     provider::KISProvider,
     types::MarketType,
 };
@@ -15,10 +15,13 @@ async fn main() {
         .await
         .expect("Provider 초기화 실패");
 
-    let result = provider
-        .get_inquire_price2("005930")
+    let response = provider
+        .get_analysis_raw(
+            DomesticAnalysisEndpoint::ConditionSearchTitles,
+            &[("user_id", ""), ("seq", "")],
+        )
         .await
-        .expect("조회 실패");
+        .expect("조건검색 목록조회 실패");
 
-    println!("{:#?}", result);
+    println!("body = {:#?}", response.body);
 }

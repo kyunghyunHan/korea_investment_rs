@@ -1,64 +1,52 @@
-use korea_investment_rs::websocket::overseas::OverseasRealtimeClient;
-use tokio;
+#[cfg(feature = "ex")]
+use dotenv::dotenv;
+use korea_investment_rs::{
+    types::CustType,
+    websocket::overseas::{
+        OverseasRealtimeClient,
+        models::OverseasDelayedTransactionPriceData,
+        types::OverseasRealtimeInfoType,
+    },
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 방법 1: 환경 변수에서 키 로드
-    let client = OverseasRealtimeClient::from_env()?;
+    #[cfg(feature = "ex")]
+    dotenv().ok();
 
-    // 방법 2: 직접 키 제공
-    // let client = OverseasRealtimeClient::new(
-    //     "your_app_key".to_string(),
-    //     "your_app_secret".to_string()
-    // );
+    let client = OverseasRealtimeClient::from_env(CustType::P).await?;
 
-    println!("해외 실시간 데이터 수신 시작...");
-
-    // 콜백 함수를 사용하여 데이터 처리
     let controller = client
-        .start_stream("DNASAAPL", |data| {
-            println!("애플 실시간 데이터:");
-            println!("  종목코드: {}", data.symb);
-            println!("  현재가: {}", data.last);
-            println!("  전일대비: {} ({}%)", data.diff, data.rate);
-            println!("  거래량: {}", data.tvol);
+        .start_delayed_transaction_price("DNASAAPL", |data: OverseasDelayedTransactionPriceData| {
+            println!("종목코드: {}", data.symb);
+            println!("현재가: {}", data.last);
+            println!("전일대비: {} ({}%)", data.diff, data.rate);
+            println!("거래량: {}", data.tvol);
         })
         .await?;
 
-    // 또는 채널을 사용하여 데이터 처리
-    // let (mut data_rx, controller) = client.start_stream_channel("DNASAAPL").await?;
-    //
-    // tokio::spawn(async move {
-    //     while let Some(data) = data_rx.recv().await {
-    //         println!("애플 실시간 데이터: 현재가 {}, 등락률 {}%", data.last, data.rate);
-    //     }
-    // });
-
-    println!("Ctrl+C를 눌러 종료하세요.");
-
-    // 프로그램이 종료되지 않도록 대기
+    println!("Ctrl+C를 누르면 종료됩니다.");
     tokio::signal::ctrl_c().await?;
-
-    // 스트림 중지
     controller.stop().await?;
-    println!("스트림이 중지되었습니다.");
-
     Ok(())
 }
-// 예제 사용 방법
-pub async fn example_usage() -> Result<(), Box<dyn Error>> {
-    // 클라이언트 생성
-    let client = OverseasRealtimeClient::from_env().await?;
 
-    // 콜백 함수로 데이터 처리
+#[allow(dead_code)]
+pub async fn example_usage() -> Result<(), Box<dyn std::error::Error>> {
+    let client = OverseasRealtimeClient::from_env(CustType::P).await?;
+
     let controller = client
-        .start_stream("DNASAAPL", |data| {
+        .start_delayed_transaction_price("DNASAAPL", |data| {
             println!("실시간 데이터: {:?}", data);
         })
         .await?;
 
-    // 또는 채널로 데이터 처리
-    let (mut data_rx, controller2) = client.start_stream_channel("DNASNASD").await?;
+    let (mut data_rx, controller2) = client
+        .start_stream_channel::<OverseasDelayedTransactionPriceData>(
+            "DNASAAPL",
+            OverseasRealtimeInfoType::DelayedTradePrice,
+        )
+        .await?;
 
     tokio::spawn(async move {
         while let Some(data) = data_rx.recv().await {
@@ -66,10 +54,8 @@ pub async fn example_usage() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    // 10초 후 스트림 중지
     tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
     controller.stop().await?;
     controller2.stop().await?;
-
     Ok(())
 }

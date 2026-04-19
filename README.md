@@ -119,13 +119,18 @@ cargo run --example get_bond_price --features ex
 - `get_orderbook`
 - `get_investor_trend`
 - `get_member_trend`
+- 분석 raw endpoint 묶음
+- 순위 raw endpoint 묶음
+- 조건검색 목록조회 / 결과조회
+- 관심종목 그룹조회 / 그룹별 종목조회
+- 재무비율 / 수익성 / 안정성 / 성장성 / 재무제표 계열
+- 종목기본정보 / 상품기본정보 / 투자의견 계열
 
 미구현:
 
 - 시간외 현재가/호가 계열 추가 확장
 - ETF/ETN/NAV 계열
-- 순위분석 대다수
-- 조건검색 계열
+- 예탁원정보 일정 계열
 
 ### 3. 국내주식 주문/계좌
 
@@ -144,6 +149,9 @@ cargo run --example get_bond_price --features ex
 - 정정취소 가능주문 조회
 - 기간별 매매손익 현황 조회
 - 기간별 손익 일별합산 조회
+- 신용매수가능조회
+- 주식통합증거금 현황
+- 기간별계좌권리현황조회
 - 퇴직연금 잔고조회
 - 퇴직연금 예수금조회
 - 퇴직연금 매수가능조회
@@ -169,11 +177,10 @@ cargo run --example get_bond_price --features ex
 - `get_overseas_index_minutes`
 - `get_overseas_asking_price`
 - `get_overseas_multi_price`
+- 조건검색 / 랭킹 / 뉴스 / 권리 raw endpoint 묶음
 
 미구현:
 
-- 해외주식 순위분석 다수
-- 뉴스/속보/권리 종합
 - 업종별 분석 계열 일부
 
 ### 5. 해외주식 주문/계좌
@@ -261,13 +268,20 @@ cargo run --example get_bond_price --features ex
 - `get_balance`
 - `get_balance_realized_pl`
 - `get_orderbook`
+- `get_domestic_volume_rank`
+- `get_condition_search_titles`
+- `get_credit_possible_order`
+- `get_integrated_margin`
 - `get_pension_balance`
 - `get_period_trade_profit`
+- `get_period_rights`
 - `get_reserve_orders`
 - `get_overseas_balance`
 - `get_overseas_asking_price`
+- `get_overseas_news_title`
 - `get_overseas_present_balance`
 - `get_overseas_period_profit`
+- `get_overseas_trade_volume_rank`
 - `get_overseas_reserve_orders`
 - `place_overseas_daytime_order`
 - `get_future_possible_order`
@@ -285,3 +299,4 @@ python3 scripts/extract_kis_api_inventory.py \
 ```
 
 세부 로드맵은 [docs/api-roadmap.md](docs/api-roadmap.md)에 정리되어 있습니다.
+예제 실행법은 [docs/examples.md](docs/examples.md)에 정리되어 있습니다.

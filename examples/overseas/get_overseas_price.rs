@@ -2,8 +2,9 @@
 use dotenv::dotenv;
 use korea_investment_rs::{
     oauth::Oauth,
-    overseas::{ApiHeader, OverseasPriceQuery, get_overseas_price}, // 해외주식 모듈
+    overseas::{OverseasPriceQuery, get_overseas_price},
     types::CustType,
+    utils::ApiHeader,
 };
 
 #[tokio::main]
