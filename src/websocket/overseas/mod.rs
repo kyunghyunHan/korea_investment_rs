@@ -1,4 +1,5 @@
 use crate::types::CustType;
+use crate::utils::http_client;
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
 pub mod models;
@@ -60,8 +61,6 @@ impl OverseasRealtimeClient {
         app_secret: String,
         cust_type: CustType,
     ) -> Result<Self, Box<dyn Error>> {
-        let client = reqwest::Client::new();
-
         let url = "https://openapi.koreainvestment.com:9443/oauth2/Approval";
 
         let body = json!({
@@ -73,7 +72,12 @@ impl OverseasRealtimeClient {
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
-        let response = client.post(url).headers(headers).json(&body).send().await?;
+        let response = http_client()
+            .post(url)
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await?;
 
         let approval_response: TokenResponse = response.json().await?;
         Ok(Self {
@@ -93,8 +97,6 @@ impl OverseasRealtimeClient {
         let app_secret = env::var("SCREST_KEY").map_err(|_| {
             OverseasRealtimeError::EnvError("APP_SECRET not set in .env file".to_string())
         })?;
-        let client = reqwest::Client::new();
-
         let url = "https://openapi.koreainvestment.com:9443/oauth2/Approval";
 
         let body = json!({
@@ -106,7 +108,12 @@ impl OverseasRealtimeClient {
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
-        let response = client.post(url).headers(headers).json(&body).send().await?;
+        let response = http_client()
+            .post(url)
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await?;
 
         let approval_response: TokenResponse = response.json().await?;
         Ok(Self {

@@ -1,6 +1,6 @@
 [package]
 name = "korea_investment_rs"
-version = "0.3.2"
+version = "0.4.2"
 edition = "2024"
 description = "Korea Investment & Securities Open API"
 license = "MIT OR Apache-2.0"
@@ -22,6 +22,10 @@ optional = true
 
 [features]
 ex = ["dotenv"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
 
 
 

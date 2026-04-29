@@ -1,4 +1,5 @@
 use crate::types::CustType;
+use crate::utils::http_client;
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
@@ -14,9 +15,7 @@ use std::{
 #[derive(Deserialize, Debug)]
 struct TokenResponse {
     access_token: String,
-    token_type: String,
     expires_in: i32,
-    access_token_token_expired: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,7 +47,6 @@ impl Oauth {
         cust_type: CustType,
         practice: bool,
     ) -> Result<Self, Box<dyn Error>> {
-        let client = reqwest::Client::new();
         let domain = if practice {
             "https://openapivts.koreainvestment.com:29443"
         } else {
@@ -68,7 +66,7 @@ impl Oauth {
             HeaderValue::from_static("application/json; charset=UTF-8"),
         );
 
-        let response = client
+        let response = http_client()
             .post(&url)
             .headers(headers)
             .json(&body)

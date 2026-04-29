@@ -1,3 +1,4 @@
+use crate::utils::http_client;
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 use serde::Deserialize;
 use serde_json::json;
@@ -26,8 +27,6 @@ impl ApproveOauth {
     ///     println!("{:?}", tokeapproval_key);
     /// ```
     pub async fn new(app_key: String, app_secret: String) -> Result<Self, Box<dyn Error>> {
-        let client = reqwest::Client::new();
-
         let url = "https://openapi.koreainvestment.com:9443/oauth2/Approval";
 
         let body = json!({
@@ -39,7 +38,12 @@ impl ApproveOauth {
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
-        let response = client.post(url).headers(headers).json(&body).send().await?;
+        let response = http_client()
+            .post(url)
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await?;
 
         let approval_response: TokenResponse = response.json().await?;
         Ok(Self {

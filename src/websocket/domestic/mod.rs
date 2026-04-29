@@ -1,4 +1,5 @@
 use crate::types::CustType;
+use crate::utils::http_client;
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
 use futures_util::{SinkExt, stream::StreamExt};
@@ -144,7 +145,6 @@ impl DomesticRealtimeClient {
         app_secret: String,
         cust_type: CustType,
     ) -> Result<Self, Box<dyn Error>> {
-        let client = reqwest::Client::new();
         let url = "https://openapi.koreainvestment.com:9443/oauth2/Approval";
         let body = json!({
             "grant_type": "client_credentials",
@@ -155,7 +155,12 @@ impl DomesticRealtimeClient {
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
-        let response = client.post(url).headers(headers).json(&body).send().await?;
+        let response = http_client()
+            .post(url)
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await?;
         let approval_response: TokenResponse = response.json().await?;
         Ok(Self {
             approval_key: approval_response.approval_key,
@@ -167,8 +172,9 @@ impl DomesticRealtimeClient {
         #[cfg(feature = "ex")]
         dotenv().ok();
 
-        let app_key = env::var("PUB_KEY")
-            .map_err(|_| DomesticRealtimeError::EnvError("APP_KEY not set in .env file".to_string()))?;
+        let app_key = env::var("PUB_KEY").map_err(|_| {
+            DomesticRealtimeError::EnvError("APP_KEY not set in .env file".to_string())
+        })?;
         let app_secret = env::var("SCREST_KEY").map_err(|_| {
             DomesticRealtimeError::EnvError("APP_SECRET not set in .env file".to_string())
         })?;

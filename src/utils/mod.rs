@@ -1,14 +1,21 @@
 use crate::oauth::Oauth;
 use crate::types::CustType;
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
-use reqwest::{Method, Response};
+use reqwest::{Client, Method, Response};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::sync::OnceLock;
 
-#[derive(Debug, Clone)]
+static HTTP_CLIENT: OnceLock<Client> = OnceLock::new();
+
+pub(crate) fn http_client() -> &'static Client {
+    HTTP_CLIENT.get_or_init(Client::new)
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct ApiHeader<'a> {
     pub personalseckey: Option<&'a str>,
     pub tr_cont: Option<&'a str>,
@@ -218,12 +225,14 @@ async fn send_request<T: DeserializeOwned, B: Serialize + ?Sized>(
     query: &[(&str, &str)],
     body: Option<&B>,
 ) -> Result<ApiResponse<T>, Box<dyn Error>> {
-    let client = reqwest::Client::new();
     let url = endpoint.url(practice)?;
     let tr_id = endpoint.tr_id.select(practice)?;
     let headers = build_headers(oauth, header, tr_id)?;
 
-    let mut request = client.request(method, &url).headers(headers).query(query);
+    let mut request = http_client()
+        .request(method, &url)
+        .headers(headers)
+        .query(query);
     if let Some(body) = body {
         request = request.json(body);
     }
@@ -250,16 +259,7 @@ pub async fn call_get_api<T: DeserializeOwned>(
     endpoint: ApiEndpoint,
     query: &[(&str, &str)],
 ) -> Result<ApiResponse<T>, Box<dyn Error>> {
-    send_request::<T, Value>(
-        oauth,
-        header,
-        practice,
-        endpoint,
-        Method::GET,
-        query,
-        None,
-    )
-    .await
+    send_request::<T, Value>(oauth, header, practice, endpoint, Method::GET, query, None).await
 }
 
 pub async fn call_post_api<T: DeserializeOwned, B: Serialize + ?Sized>(
@@ -288,9 +288,13 @@ pub async fn call_api<T: DeserializeOwned>(
     tr_id: &str,
     query: &[(&str, &str)],
 ) -> Result<T, Box<dyn Error>> {
-    let client = reqwest::Client::new();
     let headers = build_headers(oauth, header, tr_id)?;
-    let response = client.get(url).headers(headers).query(query).send().await?;
+    let response = http_client()
+        .get(url)
+        .headers(headers)
+        .query(query)
+        .send()
+        .await?;
     let status = response.status();
     if !status.is_success() {
         let error_text = response.text().await?;
@@ -304,13 +308,12 @@ pub async fn create_hashkey<T: Serialize>(
     practice: bool,
     body: &T,
 ) -> Result<String, Box<dyn Error>> {
-    let client = reqwest::Client::new();
     let domain = if practice {
         "https://openapivts.koreainvestment.com:29443"
     } else {
         "https://openapi.koreainvestment.com:9443"
     };
-    let response = client
+    let response = http_client()
         .post(format!("{domain}/uapi/hashkey"))
         .header(CONTENT_TYPE, "application/json; charset=utf-8")
         .header("appkey", &oauth.app_key)
