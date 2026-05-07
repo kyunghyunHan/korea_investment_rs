@@ -7,7 +7,7 @@ pub mod types;
 use futures_util::{SinkExt, stream::StreamExt};
 use models::{
     OverseasDelayedQuotesData, OverseasDelayedTransactionPriceData, OverseasQuotesData,
-    OverseasTransacionNotificationData, RealtimeData,
+    OverseasTransacionNotificationData, RawOverseasRealtimeData, RealtimeData,
 };
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 use serde::Deserialize;
@@ -327,6 +327,25 @@ impl OverseasRealtimeClient {
         symbol: &str,
     ) -> Result<(mpsc::Receiver<OverseasQuotesData>, StreamController), OverseasRealtimeError> {
         self.start_stream_channel::<OverseasQuotesData>(symbol, OverseasRealtimeInfoType::QuoteUSA)
+            .await
+    }
+
+    pub async fn start_raw(
+        &self,
+        symbol: &str,
+        r#type: OverseasRealtimeInfoType,
+        callback: impl FnMut(RawOverseasRealtimeData) + Send + 'static,
+    ) -> Result<StreamController, OverseasRealtimeError> {
+        self.start_stream(symbol, r#type, callback).await
+    }
+
+    pub async fn start_raw_channel(
+        &self,
+        symbol: &str,
+        r#type: OverseasRealtimeInfoType,
+    ) -> Result<(mpsc::Receiver<RawOverseasRealtimeData>, StreamController), OverseasRealtimeError>
+    {
+        self.start_stream_channel::<RawOverseasRealtimeData>(symbol, r#type)
             .await
     }
 }

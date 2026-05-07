@@ -1,10 +1,6 @@
 #[cfg(feature = "ex")]
 use dotenv::dotenv;
-use korea_investment_rs::{
-    overseas::OverseasTrading,
-    provider::KISProvider,
-    types::MarketType,
-};
+use korea_investment_rs::{overseas::OverseasTrading, provider::KISProvider, types::MarketType};
 
 #[tokio::main]
 async fn main() {
@@ -16,7 +12,7 @@ async fn main() {
         .expect("Provider 초기화 실패");
 
     let response = provider
-        .get_overseas_asking_price("NAS", "AAPL")
+        .get_overseas_asking_price("NAS", "TQQQ")
         .await
         .expect("해외 호가 조회 실패");
 

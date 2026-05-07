@@ -1,4 +1,17 @@
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RawOverseasRealtimeData {
+    pub payload: String,
+}
+
+impl RealtimeData for RawOverseasRealtimeData {
+    fn from_delimited_string(text: &str) -> Option<Self> {
+        Some(Self {
+            payload: text.to_string(),
+        })
+    }
+}
 //1) Overseas Stock Real-Time Delayed Transaction Price [Real-Time-007]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverseasDelayedTransactionPriceData {

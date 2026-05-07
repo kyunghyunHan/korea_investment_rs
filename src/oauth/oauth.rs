@@ -34,9 +34,18 @@ pub struct Oauth {
 }
 
 impl Oauth {
+    fn cache_path(cust_type: CustType, practice: bool) -> String {
+        let cust_type = match cust_type {
+            CustType::B => "b",
+            CustType::P => "p",
+        };
+        let env = if practice { "practice" } else { "real" };
+        format!("token_{env}_{cust_type}.json")
+    }
+
     /// 캐시된 토큰 불러오기
-    fn load_cached_token() -> Option<CachedToken> {
-        let data = fs::read_to_string("token.json").ok()?;
+    fn load_cached_token(path: &str) -> Option<CachedToken> {
+        let data = fs::read_to_string(path).ok()?;
         serde_json::from_str(&data).ok()
     }
 
@@ -81,7 +90,10 @@ impl Oauth {
             created_at: now,
             expires_in: token_response.expires_in,
         };
-        fs::write("token.json", serde_json::to_string_pretty(&cached)?)?;
+        fs::write(
+            Self::cache_path(cust_type, practice),
+            serde_json::to_string_pretty(&cached)?,
+        )?;
 
         Ok(Self {
             app_key,
@@ -101,14 +113,15 @@ impl Oauth {
 
         let app_key = env::var("PUB_KEY").expect("PUB_KEY not set in .env file");
         let app_secret = env::var("SCREST_KEY").expect("SCREST_KEY not set in .env file");
+        let cache_path = Self::cache_path(cust_type, practice);
 
-        if let Some(cached) = Self::load_cached_token() {
+        if let Some(cached) = Self::load_cached_token(&cache_path) {
             let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
             let expiry_time = cached.created_at + cached.expires_in as u64;
 
             if now < expiry_time {
                 // 아직 유효
-                println!("⏳ Token still valid, using cached token");
+                println!("⏳ Token still valid, using cached token: {cache_path}");
                 return Ok(Self {
                     app_key,
                     app_secret,

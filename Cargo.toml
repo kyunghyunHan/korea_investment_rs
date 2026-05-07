@@ -1,6 +1,6 @@
 [package]
 name = "korea_investment_rs"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2024"
 description = "Korea Investment & Securities Open API"
 license = "MIT OR Apache-2.0"
@@ -107,6 +107,22 @@ name = "get_future_possible_order"
 path = "./examples/futures/get_future_possible_order.rs"
 
 [[example]]
+name = "get_future_price"
+path = "./examples/futures/get_future_price.rs"
+
+[[example]]
+name = "get_future_balance"
+path = "./examples/futures/get_future_balance.rs"
+
+[[example]]
+name = "get_future_ccld"
+path = "./examples/futures/get_future_ccld.rs"
+
+[[example]]
+name = "get_overseas_future_price"
+path = "./examples/futures/get_overseas_future_price.rs"
+
+[[example]]
 name = "create_token"
 path = "./examples/oauth/create_token.rs"
 
@@ -169,6 +185,14 @@ path = "./examples/socket/creat_approval_key.rs"
 [[example]]
 name = "domestic_raw_realtime"
 path = "./examples/socket/domestic_raw_realtime.rs"
+
+[[example]]
+name = "domestic_future_realtime"
+path = "./examples/socket/domestic_future_realtime.rs"
+
+[[example]]
+name = "overseas_future_realtime"
+path = "./examples/socket/overseas_future_realtime.rs"
 
 [[example]]
 name = "real_time_delayed_execution_price"

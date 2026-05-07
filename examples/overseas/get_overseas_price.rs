@@ -13,18 +13,19 @@ async fn main() {
     dotenv().ok();
 
     // ⚡ true = 모의투자 / false = 실전계좌
-    let practice = true;
+    // 해외 시세 API는 실전 도메인 기준으로 조회합니다.
+    let practice = false;
 
     // ✅ 토큰 발급 (캐싱 지원)
     let token = Oauth::from_env_with_cache(CustType::P, practice)
         .await
         .expect("토큰 발급 실패");
 
-    // ✅ Apple (AAPL), 나스닥(NAS)
+    // ✅ ProShares UltraPro QQQ (TQQQ), 나스닥(NAS)
     let query = OverseasPriceQuery {
         auth: "P",         // 사용자 권한정보 (개인)
         exchg_code: "NAS", // 거래소 코드 (NYSE, NAS, AMS 등)
-        symbol: "AAPL",    // 종목코드(티커)
+        symbol: "TQQQ",    // 종목코드(티커)
     };
 
     // ✅ 개인용 기본 헤더 생성
