@@ -1,40 +1,6 @@
-#[cfg(feature = "ex")]
-use dotenv::dotenv;
-use korea_investment_rs::{
-    oauth::Oauth,
-    overseas::{OverseasByDayMinuteQuery, get_overseas_minutes_by_day},
-    types::CustType,
-    utils::ApiHeader,
-};
-
-#[tokio::main]
-async fn main() {
-    #[cfg(feature = "ex")]
-    dotenv().ok();
-
-    // 해외 시세 API는 실전 도메인 기준으로 조회합니다.
-    let practice = false;
-
-    let token = Oauth::from_env_with_cache(CustType::P, practice)
-        .await
-        .expect("토큰 발급 실패");
-
-    let header = ApiHeader::personal();
-
-    let query = OverseasByDayMinuteQuery {
-        auth: "",
-        exchg_code: "NAS",
-        symbol: "TQQQ",
-        bymd: "20240131", // 조회일자(YYYYMMDD)
-        nmin: "1",        // 분봉 간격
-    };
-
-    let output = get_overseas_minutes_by_day(&token, &header, query)
-        .await
-        .expect("조회 실패");
-
-    println!("📈 해외주식 특정일 분봉 조회 결과: {}건", output.len());
-    for item in output.iter().take(10) {
-        println!("{:#?}", item);
-    }
+fn main() {
+    eprintln!(
+        "한국투자 해외주식분봉조회는 BYMD 직접 조회를 지원하지 않습니다.\n\
+         해외주식 분봉은 get_overseas_today_minutes 예제에서 PINC/NEXT/KEYB로 현재/전일 포함 및 다음 페이지를 조회하세요."
+    );
 }

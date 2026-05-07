@@ -59,15 +59,13 @@ cargo run --example get_overseas_price --features ex
 cargo run --example get_overseas_daily_price --features ex
 cargo run --example get_overseas_daily_chartprice --features ex
 cargo run --example get_overseas_today_minutes --features ex
-cargo run --example get_overseas_minutes_by_day --features ex
 cargo run --example get_overseas_index_minutes --features ex
 cargo run --example get_overseas_asking_price --features ex
 ```
 
 - `get_overseas_daily_price`: TQQQ 같은 해외주식 일/주/월 기간별 시세
 - `get_overseas_daily_chartprice`: NDX 같은 해외지수, 환율, 국채, 금선물 기간별 시세
-- `get_overseas_today_minutes`: TQQQ 같은 해외주식 당일분봉
-- `get_overseas_minutes_by_day`: TQQQ 같은 해외주식 특정일 분봉
+- `get_overseas_today_minutes`: TQQQ 같은 해외주식 분봉. `PINC`, `NEXT`, `KEYB`로 전일 포함/다음 페이지 조회
 - `get_overseas_index_minutes`: NDX 같은 해외지수 분봉
 
 ## 해외 랭킹/뉴스/조건검색

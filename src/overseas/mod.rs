@@ -569,32 +569,8 @@ pub async fn get_overseas_minutes_by_day(
     header: &ApiHeader<'_>,
     q: OverseasByDayMinuteQuery<'_>,
 ) -> Result<Vec<OverseasByDayMinute>, Box<dyn Error>> {
-    let url = "https://openapi.koreainvestment.com:9443/uapi/overseas-price/v1/quotations/inquire-time-itemchartprice";
-    let keyb = format!("{}235959", q.bymd);
-
-    let resp: OverseasByDayMinuteResponse = call_api(
-        oauth,
-        header,
-        url,
-        "HHDFS76950200",
-        &[
-            ("AUTH", q.auth),
-            ("EXCD", q.exchg_code),
-            ("SYMB", q.symbol),
-            ("NMIN", q.nmin),
-            ("PINC", "1"),
-            ("NEXT", "1"),
-            ("NREC", "120"),
-            ("FILL", ""),
-            ("KEYB", keyb.as_str()),
-        ],
-    )
-    .await?;
-
-    if resp.rt_cd != "0" {
-        return Err(format!("API 오류: {} ({})", resp.msg1, resp.msg_cd).into());
-    }
-    Ok(resp.output2)
+    let _ = (oauth, header, q);
+    Err("한국투자 해외주식분봉조회는 BYMD 직접 조회를 지원하지 않습니다. get_overseas_today_minutes에서 PINC/NEXT/KEYB로 현재/전일 포함 및 다음 페이지를 조회하세요.".into())
 }
 
 // ========================================================
