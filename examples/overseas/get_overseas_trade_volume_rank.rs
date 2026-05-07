@@ -21,6 +21,10 @@ async fn main() {
             &[
                 ("AUTH", ""),
                 ("EXCD", "NAS"),
+                ("NDAY", "0"),
+                ("VOL_RANG", "0"),
+                ("PRC1", ""),
+                ("PRC2", ""),
                 ("NREC", "20"),
                 ("CO_YN_PRICECUR", "0"),
                 ("KEYB", ""),

@@ -2,7 +2,7 @@
 use dotenv::dotenv;
 use korea_investment_rs::{
     oauth::Oauth,
-    overseas::{get_overseas_daily_chartprice, OverseasDailyChartQuery},
+    overseas::{OverseasDailyChartQuery, get_overseas_daily_chartprice},
     types::CustType,
     utils::ApiHeader,
 };
@@ -12,8 +12,8 @@ async fn main() {
     #[cfg(feature = "ex")]
     dotenv().ok();
 
-    // ⚡ true = 모의투자 / false = 실전계좌
-    let practice = true;
+    // ⚡ 해외 시세 API는 실전 도메인 기준으로 조회합니다.
+    let practice = false;
 
     // ✅ 토큰 발급 (캐싱 지원)
     let token = Oauth::from_env_with_cache(CustType::P, practice)
@@ -24,8 +24,8 @@ async fn main() {
     let header = ApiHeader::personal();
 
     // ✅ 조회 파라미터 (필요에 맞게 변경)
-    let div = "N";          // 시장 분류 코드 (N: 해외지수, X: 환율, I: 국채, S: 금선물)
-    let itm_no = "KOSPQ";   // 종목번호(티커)
+    let div = "N"; // 시장 분류 코드 (N: 해외지수, X: 환율, I: 국채, S: 금선물)
+    let itm_no = "NDX"; // 해외지수 코드 (예: NDX = 나스닥 100)
     let st_dt = "20240101"; // 시작일자(YYYYMMDD)
     let ed_dt = "20240131"; // 종료일자(YYYYMMDD)
     let period = "D";       // 기간분류코드 (D/W/M/Y)
@@ -42,7 +42,7 @@ async fn main() {
         .await
         .expect("조회 실패");
 
-    println!("📈 해외주식 종목/지수/환율기간별시세 조회 결과:");
+    println!("📈 해외지수/환율 기간별 시세 조회 결과:");
     println!("output1: {:#?}", output1);
     println!("output2: {:#?}", output2);
 }

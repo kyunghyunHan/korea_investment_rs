@@ -19,12 +19,14 @@ async fn main() {
         .get_overseas_analysis_raw(
             OverseasAnalysisEndpoint::NewsTitle,
             &[
-                ("AUTH", ""),
-                ("EXCD", "NAS"),
+                ("INFO_GB", ""),
+                ("CLASS_CD", ""),
+                ("NATION_CD", "US"),
+                ("EXCHANGE_CD", ""),
                 ("SYMB", "AAPL"),
-                ("GUBN", "0"),
-                ("BYMD", ""),
-                ("MODP", "0"),
+                ("DATA_DT", ""),
+                ("DATA_TM", ""),
+                ("CTS", ""),
             ],
         )
         .await

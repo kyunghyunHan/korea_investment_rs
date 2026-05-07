@@ -1,6 +1,6 @@
 [package]
 name = "korea_investment_rs"
-version = "0.4.3"
+version = "0.4.4"
 edition = "2024"
 description = "Korea Investment & Securities Open API"
 license = "MIT OR Apache-2.0"
@@ -21,6 +21,7 @@ optional = true
 
 
 [features]
+default = ["ex"]
 ex = ["dotenv"]
 
 [profile.release]
@@ -137,6 +138,18 @@ path = "./examples/overseas/get_overseas_balance.rs"
 [[example]]
 name = "get_overseas_daily_chartprice"
 path = "./examples/overseas/get_overseas_daily_chartprice.rs"
+
+[[example]]
+name = "get_overseas_daily_price"
+path = "./examples/overseas/get_overseas_daily_price.rs"
+
+[[example]]
+name = "get_overseas_today_minutes"
+path = "./examples/overseas/get_overseas_today_minutes.rs"
+
+[[example]]
+name = "get_overseas_minutes_by_day"
+path = "./examples/overseas/get_overseas_minutes_by_day.rs"
 
 [[example]]
 name = "get_overseas_index_minutes"

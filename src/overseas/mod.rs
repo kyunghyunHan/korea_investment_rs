@@ -196,7 +196,8 @@ pub struct OverseasDailyChartQuery<'a> {
     pub period_div_code: &'a str, // D:일, W:주, M:월, Y:년
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct OverseasDailyChartOutput1 {
     pub ovrs_nmix_prdy_vrss: String,
     pub prdy_vrss_sign: String,
@@ -428,18 +429,47 @@ pub struct OverseasTodayMinuteQuery<'a> {
     #[serde(rename = "SYMB")]
     pub symbol: &'a str,
     #[serde(rename = "NMIN")]
-    pub nmin: &'a str, // "1","5","10"
+    pub nmin: &'a str, // 분단위(1, 2, 5 ...)
+    #[serde(rename = "PINC")]
+    pub include_prev_day: &'a str, // 0: 당일, 1: 전일 포함
+    #[serde(rename = "NEXT")]
+    pub next: &'a str, // 처음 조회 "", 다음 조회 "1"
+    #[serde(rename = "NREC")]
+    pub record_count: &'a str, // 요청 건수(최대 120)
+    #[serde(rename = "FILL")]
+    pub fill: &'a str, // 공백
+    #[serde(rename = "KEYB")]
+    pub next_key: &'a str, // 처음 조회 "", 다음 조회 시 YYYYMMDDHHMMSS
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OverseasTodayMinute {
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct OverseasTodayMinuteOutput1 {
+    pub rsym: String,
+    pub zdiv: String,
+    pub stim: String,
+    pub etim: String,
+    pub sktm: String,
+    pub ektm: String,
+    pub next: String,
+    pub more: String,
+    pub nrec: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct OverseasTodayMinuteOutput2 {
+    pub tymd: String,
     pub xymd: String,
-    pub xtime: String,
+    pub xhms: String,
+    pub kymd: String,
+    pub khms: String,
     pub open: String,
     pub high: String,
     pub low: String,
     pub last: String,
-    pub tvol: String,
+    pub evol: String,
+    pub eamt: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -447,26 +477,32 @@ pub struct OverseasTodayMinuteResponse {
     pub rt_cd: String,
     pub msg_cd: String,
     pub msg1: String,
-    pub output: Vec<OverseasTodayMinute>,
+    pub output1: OverseasTodayMinuteOutput1,
+    pub output2: Vec<OverseasTodayMinuteOutput2>,
 }
 
 pub async fn get_overseas_today_minutes(
     oauth: &Oauth,
     header: &ApiHeader<'_>,
     q: OverseasTodayMinuteQuery<'_>,
-) -> Result<Vec<OverseasTodayMinute>, Box<dyn Error>> {
-    let url = "https://openapi.koreainvestment.com:9443/uapi/overseas-price/v1/quotations/inquire-timechartprice";
+) -> Result<(OverseasTodayMinuteOutput1, Vec<OverseasTodayMinuteOutput2>), Box<dyn Error>> {
+    let url = "https://openapi.koreainvestment.com:9443/uapi/overseas-price/v1/quotations/inquire-time-itemchartprice";
 
     let resp: OverseasTodayMinuteResponse = call_api(
         oauth,
         header,
         url,
-        "HHDFS76200300",
+        "HHDFS76950200",
         &[
             ("AUTH", q.auth),
             ("EXCD", q.exchg_code),
             ("SYMB", q.symbol),
             ("NMIN", q.nmin),
+            ("PINC", q.include_prev_day),
+            ("NEXT", q.next),
+            ("NREC", q.record_count),
+            ("FILL", q.fill),
+            ("KEYB", q.next_key),
         ],
     )
     .await?;
@@ -474,7 +510,7 @@ pub async fn get_overseas_today_minutes(
     if resp.rt_cd != "0" {
         return Err(format!("API 오류: {} ({})", resp.msg1, resp.msg_cd).into());
     }
-    Ok(resp.output)
+    Ok((resp.output1, resp.output2))
 }
 
 // ========================================================
@@ -496,13 +532,28 @@ pub struct OverseasByDayMinuteQuery<'a> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverseasByDayMinute {
+    #[serde(default)]
+    pub tymd: String,
+    #[serde(default)]
     pub xymd: String,
-    pub xtime: String,
+    #[serde(default)]
+    pub xhms: String,
+    #[serde(default)]
+    pub kymd: String,
+    #[serde(default)]
+    pub khms: String,
+    #[serde(default)]
     pub open: String,
+    #[serde(default)]
     pub high: String,
+    #[serde(default)]
     pub low: String,
+    #[serde(default)]
     pub last: String,
-    pub tvol: String,
+    #[serde(default)]
+    pub evol: String,
+    #[serde(default)]
+    pub eamt: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -510,7 +561,7 @@ pub struct OverseasByDayMinuteResponse {
     pub rt_cd: String,
     pub msg_cd: String,
     pub msg1: String,
-    pub output: Vec<OverseasByDayMinute>,
+    pub output2: Vec<OverseasByDayMinute>,
 }
 
 pub async fn get_overseas_minutes_by_day(
@@ -518,19 +569,24 @@ pub async fn get_overseas_minutes_by_day(
     header: &ApiHeader<'_>,
     q: OverseasByDayMinuteQuery<'_>,
 ) -> Result<Vec<OverseasByDayMinute>, Box<dyn Error>> {
-    let url = "https://openapi.koreainvestment.com:9443/uapi/overseas-price/v1/quotations/inquire-time-dailychartprice";
+    let url = "https://openapi.koreainvestment.com:9443/uapi/overseas-price/v1/quotations/inquire-time-itemchartprice";
+    let keyb = format!("{}235959", q.bymd);
 
     let resp: OverseasByDayMinuteResponse = call_api(
         oauth,
         header,
         url,
-        "HHDFS76200330",
+        "HHDFS76950200",
         &[
             ("AUTH", q.auth),
             ("EXCD", q.exchg_code),
             ("SYMB", q.symbol),
-            ("BYMD", q.bymd),
             ("NMIN", q.nmin),
+            ("PINC", "1"),
+            ("NEXT", "1"),
+            ("NREC", "120"),
+            ("FILL", ""),
+            ("KEYB", keyb.as_str()),
         ],
     )
     .await?;
@@ -538,7 +594,7 @@ pub async fn get_overseas_minutes_by_day(
     if resp.rt_cd != "0" {
         return Err(format!("API 오류: {} ({})", resp.msg1, resp.msg_cd).into());
     }
-    Ok(resp.output)
+    Ok(resp.output2)
 }
 
 // ========================================================
