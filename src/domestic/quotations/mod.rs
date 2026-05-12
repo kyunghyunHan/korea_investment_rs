@@ -1,8 +1,8 @@
 use crate::provider::KISProvider;
 use crate::utils::{ApiEndpoint, ApiResponse, RawApiBody, TrId, call_api, call_get_api};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use async_trait::async_trait;
 // ======================================================
 // Domestic Trait 정의
 // ======================================================
@@ -237,14 +237,17 @@ pub struct TicksResponse {
     pub output: Vec<Tick>,
 }
 
-// 당일 분봉
+// 당일 분봉: 당일 기준 시간 이전 1분봉을 조회합니다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TodayMinuteCandle {
+    #[serde(default)]
+    pub stck_bsop_date: String,
     pub stck_cntg_hour: String,
     pub stck_prpr: String,
     pub stck_oprc: String,
     pub stck_hgpr: String,
     pub stck_lwpr: String,
+    #[serde(default, alias = "cntg_vol")]
     pub acml_vol: String,
 }
 
@@ -253,17 +256,21 @@ pub struct TodayMinuteResponse {
     pub rt_cd: String,
     pub msg_cd: String,
     pub msg1: String,
+    #[serde(alias = "output2")]
     pub output: Vec<TodayMinuteCandle>,
 }
 
-// 특정일 분봉
+// 특정일 분봉: 입력 날짜/시간 기준으로 과거 분봉을 조회합니다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ByDayMinuteCandle {
+    #[serde(default)]
+    pub stck_bsop_date: String,
     pub stck_cntg_hour: String,
     pub stck_prpr: String,
     pub stck_oprc: String,
     pub stck_hgpr: String,
     pub stck_lwpr: String,
+    #[serde(default, alias = "cntg_vol")]
     pub acml_vol: String,
 }
 
@@ -272,6 +279,7 @@ pub struct ByDayMinutesResponse {
     pub rt_cd: String,
     pub msg_cd: String,
     pub msg1: String,
+    #[serde(alias = "output2")]
     pub output: Vec<ByDayMinuteCandle>,
 }
 
@@ -340,8 +348,7 @@ impl Domestic for KISProvider {
             fid_cond_mrkt_div_code: market_div_code,
             fid_input_iscd: index_code,
         };
-        let url =
-            "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-index-price";
+        let url = "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-index-price";
 
         let response: IndexPriceResponse = call_api(
             &self.oauth,
@@ -427,21 +434,27 @@ impl Domestic for KISProvider {
         stock_code: &str,
         interval: &str,
     ) -> Result<Vec<TodayMinuteCandle>, Box<dyn Error>> {
-        let url = "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-timechartprice";
+        let endpoint = ApiEndpoint::new(
+            "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice",
+            TrId::new("FHKST03010200", Some("FHKST03010200")),
+        );
 
-        let response: TodayMinuteResponse = call_api(
+        let response = call_get_api::<TodayMinuteResponse>(
             &self.oauth,
             &self.header,
-            url,
-            "FHKST03010200",
+            self.practice,
+            endpoint,
             &[
+                ("FID_ETC_CLS_CODE", ""),
                 ("FID_COND_MRKT_DIV_CODE", "J"),
                 ("FID_INPUT_ISCD", stock_code),
                 ("FID_INPUT_HOUR_1", interval),
+                ("FID_PW_DATA_INCU_YN", "N"),
             ],
         )
         .await?;
 
+        let response = response.body;
         if response.rt_cd != "0" {
             return Err(format!("API 오류: {} ({})", response.msg1, response.msg_cd).into());
         }
@@ -454,22 +467,28 @@ impl Domestic for KISProvider {
         date: &str,
         interval: &str,
     ) -> Result<Vec<ByDayMinuteCandle>, Box<dyn Error>> {
-        let url = "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice";
+        let endpoint = ApiEndpoint::new(
+            "/uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice",
+            TrId::new("FHKST03010230", Some("FHKST03010230")),
+        );
 
-        let response: ByDayMinutesResponse = call_api(
+        let response = call_get_api::<ByDayMinutesResponse>(
             &self.oauth,
             &self.header,
-            url,
-            "FHKST03010230",
+            self.practice,
+            endpoint,
             &[
                 ("FID_COND_MRKT_DIV_CODE", "J"),
                 ("FID_INPUT_ISCD", stock_code),
                 ("FID_INPUT_DATE_1", date),
                 ("FID_INPUT_HOUR_1", interval),
+                ("FID_PW_DATA_INCU_YN", "N"),
+                ("FID_FAKE_TICK_INCU_YN", ""),
             ],
         )
         .await?;
 
+        let response = response.body;
         if response.rt_cd != "0" {
             return Err(format!("API 오류: {} ({})", response.msg1, response.msg_cd).into());
         }

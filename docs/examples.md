@@ -29,8 +29,17 @@ cargo run --example <example_name> --features ex
 cargo run --example get_inquire_period_price --features ex
 cargo run --example get_inquire_index_price --features ex
 cargo run --example get_inquire_daily_itemchartprice --features ex
+cargo run --example get_today_minutes --features ex
+cargo run --example get_minutes_by_day --features ex
 cargo run --example get_orderbook --features ex
 ```
+
+- `get_inquire_period_price`: 삼성전자 같은 국내주식 일/주/월/년 기간별 시세
+- `get_inquire_index_price`: 코스피, 코스닥 같은 국내 업종/지수 현재가
+- `get_inquire_daily_itemchartprice`: 삼성전자 같은 국내주식 일/주/월/년 차트 시세
+- `get_today_minutes`: 삼성전자 같은 국내주식 당일 분봉. 날짜 없이 기준 시간만 입력
+- `get_minutes_by_day`: 삼성전자 같은 국내주식 특정일 분봉. 날짜와 기준 시간을 함께 입력
+- `get_orderbook`: 삼성전자 같은 국내주식 호가
 
 ## 국내 랭킹/분석/조건검색
 

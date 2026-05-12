@@ -1,6 +1,6 @@
 [package]
 name = "korea_investment_rs"
-version = "0.4.5"
+version = "0.4.6"
 edition = "2024"
 description = "Korea Investment & Securities Open API"
 license = "MIT OR Apache-2.0"
@@ -46,6 +46,14 @@ path = "./examples/domestic/get_inquire_index_price.rs"
 [[example]]
 name = "get_inquire_daily_itemchartprice"
 path = "./examples/domestic/get_inquire_daily_itemchartprice.rs"
+
+[[example]]
+name = "get_today_minutes"
+path = "./examples/domestic/get_today_minutes.rs"
+
+[[example]]
+name = "get_minutes_by_day"
+path = "./examples/domestic/get_minutes_by_day.rs"
 
 [[example]]
 name = "get_inquire_price2"
